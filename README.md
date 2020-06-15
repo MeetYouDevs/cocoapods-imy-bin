@@ -94,9 +94,7 @@ download_file_type: zip
 
 ## 四、制作二进制组件
 
-
-
-[制作二进制演示视频](https://github.com/su350380433/cocaopods-imy-bin/tree/master/%E6%BC%94%E7%A4%BA%E8%A7%86%E9%A2%91)
+[制作二进制演示视频](https://github.com/MeetYouDevs/cocoapods-imy-bin/tree/master/%E6%BC%94%E7%A4%BA%E8%A7%86%E9%A2%91)
 
 ### 1、制作命令
 
@@ -148,7 +146,7 @@ pod bin local 是配合其他三方编译产物的命令，需要配置编译产
 
 ### 4、使用二进制
 
-[使用二进制视频演示](https://github.com/su350380433/cocaopods-imy-bin/tree/master/%E6%BC%94%E7%A4%BA%E8%A7%86%E9%A2%91)
+[使用二进制视频演示](https://github.com/MeetYouDevs/cocoapods-imy-bin/tree/master/%E6%BC%94%E7%A4%BA%E8%A7%86%E9%A2%91)
 
 在Podfile文件中，加入这两行代码，对已经制作二进制的就会生效，自动转换二进制组件依赖。
 
@@ -159,13 +157,11 @@ use_binaries!
 
 ## 五、扩展功能
 
-
-
 ### 1、本地配置文件 - Podfile_local
 
 本地组件配置文件 Podfile_local，目前已支持Podfile下的大部分功能，可以把一些本地配置的语句放到Podfile_local。
 
-<img src="https://raw.githubusercontent.com/su350380433/cocaopods-imy-bin/master/img/Podfile_local.png" style="zoom:50%;" />
+<img src="https://raw.githubusercontent.com/MeetYouDevs/cocoapods-imy-bin/master/img/Podfile_local.png" style="zoom:50%;" />
 
 场景: 
 
@@ -225,7 +221,7 @@ pod bin install
 
 ### 2、二进制源码调试
 
-[二进制源码调试使用视频演示](https://github.com/su350380433/cocaopods-imy-bin/tree/master/%E6%BC%94%E7%A4%BA%E8%A7%86%E9%A2%91)
+[二进制源码调试使用视频演示](https://github.com/MeetYouDevs/cocoapods-imy-bin/tree/master/%E6%BC%94%E7%A4%BA%E8%A7%86%E9%A2%91)
 
 在项目根目录下，输入命令:
 
@@ -251,7 +247,7 @@ Options:
     --source      源码路径，本地路径,会去自动链接本地源码
 ```
 
-效果与演示参考[链接1](https://juejin.im/post/5eccceb9f265da76f30e4e13#heading-48)、[视频](https://github.com/su350380433/cocaopods-imy-bin/tree/master/%E6%BC%94%E7%A4%BA%E8%A7%86%E9%A2%91)
+效果与演示参考[链接1](https://juejin.im/post/5eccceb9f265da76f30e4e13#heading-48)、[视频](https://github.com/MeetYouDevs/cocoapods-imy-bin/tree/master/%E6%BC%94%E7%A4%BA%E8%A7%86%E9%A2%91)
 
 ### 3、快捷键命令
 
