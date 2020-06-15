@@ -94,7 +94,7 @@ download_file_type: zip
 
 ## 四、制作二进制组件
 
-[制作二进制演示视频](https://github.com/MeetYouDevs/cocoapods-imy-bin/tree/master/%E6%BC%94%E7%A4%BA%E8%A7%86%E9%A2%91)
+[视频演示](https://github.com/MeetYouDevs/cocoapods-imy-bin/tree/master/%E6%BC%94%E7%A4%BA%E8%A7%86%E9%A2%91)
 
 ### 1、制作命令
 
@@ -146,7 +146,7 @@ pod bin local 是配合其他三方编译产物的命令，需要配置编译产
 
 ### 4、使用二进制
 
-[使用二进制视频演示](https://github.com/MeetYouDevs/cocoapods-imy-bin/tree/master/%E6%BC%94%E7%A4%BA%E8%A7%86%E9%A2%91)
+[视频演示](https://github.com/MeetYouDevs/cocoapods-imy-bin/tree/master/%E6%BC%94%E7%A4%BA%E8%A7%86%E9%A2%91)
 
 在Podfile文件中，加入这两行代码，对已经制作二进制的就会生效，自动转换二进制组件依赖。
 
@@ -221,7 +221,7 @@ pod bin install
 
 ### 2、二进制源码调试
 
-[二进制源码调试使用视频演示](https://github.com/MeetYouDevs/cocoapods-imy-bin/tree/master/%E6%BC%94%E7%A4%BA%E8%A7%86%E9%A2%91)
+[视频演示](https://github.com/MeetYouDevs/cocoapods-imy-bin/tree/master/%E6%BC%94%E7%A4%BA%E8%A7%86%E9%A2%91)
 
 在项目根目录下，输入命令:
 
