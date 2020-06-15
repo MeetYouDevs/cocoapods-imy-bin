@@ -2,6 +2,7 @@
 
 ## 一、概要
 
+<br/>
 
 cocoapods-imy-bin功能点：
 
@@ -19,6 +20,9 @@ cocoapods-imy-bin插件所关联的组件二进制化策略：
 > [iOS编译速度如何稳定提高10倍以上](https://www.jianshu.com/p/08cffdfa2885)
 >
 > [Demo](https://github.com/su350380433/cocoapods-imy-bin-demo)
+>
+
+<br/>
 
 ## 二、准备工作
 
@@ -30,11 +34,15 @@ cocoapods-imy-bin插件所关联的组件二进制化策略：
 sudo gem install cocoapods-imy-bin
 ```
 
+
+<br/>
+
 ## 三、使用二进制组件
 
 
-
 ### 1、环境搭建
+
+<br/>
 
 [环境搭建详细教程](https://github.com/su350380433/cocoapods-imy-bin-demo)
 
@@ -42,6 +50,8 @@ sudo gem install cocoapods-imy-bin
 
 - 静态资源服务器（ [binary-server](https://github.com/su350380433/binary-server)，附详细使用教程）
 - 二进制私有源仓库（保存组件二进制版本 podspec）
+
+<br/>
 
 ### 2、初始化插件
 
@@ -92,7 +102,12 @@ download_file_type: zip
 
 记得启动 `sudo mongod`服务，静态资源服务。
 
+
+<br/>
+
 ## 四、制作二进制组件
+
+<br/>
 
 [视频演示](https://github.com/MeetYouDevs/cocoapods-imy-bin/tree/master/%E6%BC%94%E7%A4%BA%E8%A7%86%E9%A2%91)
 
@@ -134,9 +149,15 @@ pod bin local 是配合其他三方编译产物的命令，需要配置编译产
 }
 ```
 
+
+<br/>
+
 ### 2. 二进制Podspec 
 
 通过`pod bin auto`和`pod bin local`二进制Podspec 会自动生成、上传，无需关心。
+
+
+<br/>
 
 ### 3、查看结果
 
@@ -144,7 +165,12 @@ pod bin local 是配合其他三方编译产物的命令，需要配置编译产
 
 二进制私有源参考：https://github.com/su350380433/example_spec_bin_dev.git（自定义）
 
+
+<br/>
+
 ### 4、使用二进制
+
+<br/>
 
 [视频演示](https://github.com/MeetYouDevs/cocoapods-imy-bin/tree/master/%E6%BC%94%E7%A4%BA%E8%A7%86%E9%A2%91)
 
@@ -155,7 +181,12 @@ plugin 'cocoapods-imy-bin'
 use_binaries!
 ```
 
+
+<br/>
+
 ## 五、扩展功能
+
+<br/>
 
 ### 1、本地配置文件 - Podfile_local
 
@@ -219,7 +250,12 @@ pod bin install
 
 如果您不习惯Podfile_local的使用方式，可以把命令写在Podfile里面，pod时不需要加bin，依旧是 pod update/install。
 
+
+<br/>
+
 ### 2、二进制源码调试
+
+<br/>
 
 [视频演示](https://github.com/MeetYouDevs/cocoapods-imy-bin/tree/master/%E6%BC%94%E7%A4%BA%E8%A7%86%E9%A2%91)
 
@@ -249,7 +285,12 @@ Options:
 
 效果与演示参考[链接1](https://juejin.im/post/5eccceb9f265da76f30e4e13#heading-48)、[视频](https://github.com/MeetYouDevs/cocoapods-imy-bin/tree/master/%E6%BC%94%E7%A4%BA%E8%A7%86%E9%A2%91)
 
+
+<br/>
+
 ### 3、快捷键命令
+
+<br/>
 
 在任意的终端执行命令，都能执行特定目录下特定命令
 
@@ -290,6 +331,8 @@ hot_key_cmd: pod bin update --no-repo-update
 旧值：1 
 ```
 
+
+<br/>
 
 ## 六、 DSL参数解释
 
@@ -399,6 +442,9 @@ set_configuration_env('debug_iphoneos')
 ```ruby
 install! 'cocoapods', { install_with_multi_threads: false }
 ```
+
+
+<br/>
 
 ## 七、感谢
 
