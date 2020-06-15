@@ -381,7 +381,7 @@ pod bin init --bin-url=https://gitlab.xxx.com/cocoapods-imy-bin-config/raw/maste
 pod bin init --bin-url=https://gitlab.xxx.com/cocoapods-imy-bin-config/raw/master/bin_debug_iphoneos.yml
 
 
-#release_iPhoneos 初始化插件配置，release暂时未启用
+#release_iPhoneos 初始化插件配置
 pod bin init --bin-url=https://gitlab.xxx.com/cocoapods-imy-bin-config/raw/master/bin_release_iphoneos.yml
 ```
 
