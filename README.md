@@ -69,7 +69,7 @@ xx:Demo slj$ pod bin init
 configuration_env: dev
 code_repo_url: git@github.com:su350380433/example_spec_source.git
 binary_repo_url: git@github.com:su350380433/example_spec_bin_dev.git
-binary_download_url: http://localhost:8080/frameworks/%s/%s.zip
+binary_download_url: http://localhost:8080/frameworks/%s/%s/zip
 download_file_type: zip
 
 
