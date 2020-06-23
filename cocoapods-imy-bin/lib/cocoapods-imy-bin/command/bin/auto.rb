@@ -19,6 +19,7 @@ module Pod
               ['--framework-output', '输出framework文件'],
               ['--no-zip', '不压缩静态 framework 为 zip'],
               ['--all-make', '对该组件的依赖库，全部制作为二进制组件'],
+              ['--configuration', 'Build the specified configuration (e.g. Debug). Defaults to Release'],
               ['--env', "该组件上传的环境 %w[dev debug_iphoneos release_iphoneos]"]
           ]
         end
@@ -38,6 +39,9 @@ module Pod
           @zip = argv.flag?('zip', true)
           @all_make = argv.flag?('all-make', false )
           @verbose = argv.flag?('verbose',true)
+
+          @config = argv.option('configuration', 'Release')
+
           super
         end
 
@@ -113,7 +117,7 @@ module Pod
           if @env
             argvs += ["--env=#{@env}"]
           end
-
+          argvs += ["--configuration=#{@config}"]
           
           archive = Pod::Command::Bin::Archive.new(CLAide::ARGV.new(argvs))
           archive.validate!
