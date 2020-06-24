@@ -6,7 +6,7 @@
 
 cocoapods-imy-bin功能点：
 
- 1. 组件二进制化，`无入侵式`支持组件二进制化，全自动制作，无需手动操作。致力于解决Ci打包速度慢、研发编译慢等编译问题。
+ 1. 组件二进制化，`无入侵式`支持组件二进制化，完全自动化，无需手动操作。致力于解决Ci打包速度慢、研发编译慢等编译问题。
  2. 本地配置文件 - `Podfile_local`
  3. 二进制源码调试`pod bin code`，类似[美团 iOS 工程 zsource 命令背后的那些事儿](https://links.jianshu.com/go?to=https%3A%2F%2Ftech.meituan.com%2F2019%2F08%2F08%2Fthe-things-behind-the-ios-project-zsource-command.html)的效果。
  4. 命令快捷键`pod bin imy`，如游戏快捷键，根据配置会在特定目录执行特定命令（如任意终端目录下，执行某个特定目录的pod update --no-repo-update命令），减少其他繁琐操作。支持任意个快捷键。
