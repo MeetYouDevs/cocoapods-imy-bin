@@ -2,7 +2,6 @@
 
 ## 一、概要
 
-<br/>
 
 cocoapods-imy-bin功能点：
 
@@ -22,7 +21,6 @@ cocoapods-imy-bin插件所关联的组件二进制化策略：
 > [Demo](https://github.com/su350380433/cocoapods-imy-bin-demo)
 >
 
-<br/>
 
 ## 二、准备工作
 
@@ -35,7 +33,6 @@ sudo gem install cocoapods-imy-bin
 ```
 
 
-<br/>
 
 ## 三、使用二进制组件
 
@@ -51,7 +48,7 @@ sudo gem install cocoapods-imy-bin
 - 静态资源服务器（ [binary-server](https://github.com/su350380433/binary-server)，附详细使用教程）
 - 二进制私有源仓库（保存组件二进制版本 podspec）
 
-<br/>
+
 
 ### 2、初始化插件
 
@@ -455,4 +452,3 @@ install! 'cocoapods', { install_with_multi_threads: false }
 [美团 iOS 工程 zsource 命令背后的那些事儿](https://links.jianshu.com/go?to=https%3A%2F%2Ftech.meituan.com%2F2019%2F08%2F08%2Fthe-things-behind-the-ios-project-zsource-command.html)
 
 #### 您有什么更好的想法，可以提出来，我们一起来实现，共创一个强大的平台，同时也欢迎给我们提PR。 
-研发不易，求各位老板点个 星星✨😆😆😆
