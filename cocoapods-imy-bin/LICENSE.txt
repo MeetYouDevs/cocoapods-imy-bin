@@ -1,4 +1,4 @@
-Copyright (c) 2018 tripleCC <triplec.linux@gmail.com>
+Copyright (c) 2018 tripleCC <suliangjin@xiaoyouzi.com>
 
 MIT License
 
