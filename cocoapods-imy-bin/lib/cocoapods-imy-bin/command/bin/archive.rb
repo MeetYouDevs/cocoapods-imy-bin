@@ -154,6 +154,7 @@ module Pod
                   "--sources=#{sources_option(@code_dependencies, @sources)}",
                   "--gen-directory=#{CBin::Config::Builder.instance.gen_dir}",
                   '--clean',
+                  '--use-podfile',
                   *@additional_args
                 ]
 

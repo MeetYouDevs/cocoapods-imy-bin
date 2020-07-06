@@ -194,9 +194,13 @@ module CBin
       end
 
       def xcodebuild(defines = '', args = '', build_dir = 'build',build_model = 'Debug')
-        #xcodebuild GCC_PREPROCESSOR_DEFINITIONS='$(inherited)'  ARCHS='x86_64 arm64 armv7 armv7s i386' OTHER_CFLAGS='-fembed-bitcode -Qunused-arguments' CONFIGURATION_BUILD_DIR=build clean build -configuration Debug -target IMYTCP -project ./Pods.xcodeproj 2>&1
-        # xcodebuild GCC_PREPROCESSOR_DEFINITIONS='$(inherited)'  -sdk iphoneos CONFIGURATION_BUILD_DIR=build-simulator clean build -configuration Release -target IMYFoundation -project ./Pods/Pods.xcodeproj 2>&1
-        command = "xcodebuild #{defines} #{args} CONFIGURATION_BUILD_DIR=#{build_dir} clean build -configuration #{build_model} -target #{target_name} -project ./Pods.xcodeproj 2>&1"
+
+        unless File.exist?("Pods.xcodeproj") #cocoapods-generate v2.0.0
+          command = "xcodebuild #{defines} #{args} CONFIGURATION_BUILD_DIR=#{File.join(File.expand_path("..", build_dir), File.basename(build_dir))} clean build -configuration #{build_model} -target #{target_name} -project ./Pods/Pods.xcodeproj 2>&1"
+        else
+          command = "xcodebuild #{defines} #{args} CONFIGURATION_BUILD_DIR=#{build_dir} clean build -configuration #{build_model} -target #{target_name} -project ./Pods.xcodeproj 2>&1"
+        end
+
         UI.message "command = #{command}"
         output = `#{command}`.lines.to_a
 
