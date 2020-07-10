@@ -160,9 +160,9 @@ pod bin local 是配合其他三方编译产物的命令，需要配置编译产
 
 ### 3、查看结果
 
-二进制存储服务：http://localhost:8080/frameworks/（默认本地8080端口）
+二进制存储服务：[http://localhost:8080/frameworks/](http://localhost:8080/frameworks/)（默认本地8080端口）
 
-二进制私有源参考：https://github.com/su350380433/example_spec_bin_dev.git（自定义）
+二进制私有源参考：[https://github.com/su350380433/example_spec_bin_dev](https://github.com/su350380433/example_spec_bin_dev)（自定义）
 
 
 <br/>
