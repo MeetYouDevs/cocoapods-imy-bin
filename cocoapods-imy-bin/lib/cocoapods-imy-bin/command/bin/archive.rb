@@ -127,7 +127,8 @@ module Pod
                                                 false ,
                                                 @config)
               builder.build
-            rescue
+            rescue Object => exception
+              UI.puts exception
               fail_build_specs << spec
             end
           end

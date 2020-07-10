@@ -10,7 +10,7 @@ module CBin
     class Builder
       include Pod
 #Debug下还待完成
-      def initialize(spec, file_accessor, platform, source_dir, isRootSpec = true, build_model="Release")
+      def initialize(spec, file_accessor, platform, source_dir, isRootSpec = true, build_model="Debug")
         @spec = spec
         @source_dir = source_dir
         @file_accessor = file_accessor
@@ -72,14 +72,10 @@ module CBin
       def build_sim_libraries(defines)
         UI.message 'Building simulator libraries'
 
-        if is_debug_model
-          # archs = %w[i386 x86_64]
-          archs = ios_architectures_sim
-          archs.map do |arch|
-            xcodebuild(defines, "-sdk iphonesimulator ARCHS=\'#{arch}\' ", "build-#{arch}","Debug")
-          end
-        else
-          xcodebuild(defines, "-sdk iphonesimulator ", 'build-simulator', "Release")
+        # archs = %w[i386 x86_64]
+        archs = ios_architectures_sim
+        archs.map do |arch|
+          xcodebuild(defines, "-sdk iphonesimulator ARCHS=\'#{arch}\' ", "build-#{arch}",@build_model)
         end
 
       end
@@ -96,33 +92,33 @@ module CBin
       def build_static_library_for_ios(output)
         UI.message "Building ios libraries with archs #{ios_architectures}"
         static_libs = static_libs_in_sandbox('build') + static_libs_in_sandbox('build-simulator') + @vendored_libraries
-        if is_debug_model
+        # if is_debug_model
           ios_architectures.map do |arch|
             static_libs += static_libs_in_sandbox("build-#{arch}") + @vendored_libraries
           end
           ios_architectures_sim do |arch|
             static_libs += static_libs_in_sandbox("build-#{arch}") + @vendored_libraries
           end
-        end
+        # end
 
         build_path = Pathname("build")
         build_path.mkpath unless build_path.exist?
 
-        if is_debug_model
+        # if is_debug_model
           libs = (ios_architectures + ios_architectures_sim) .map do |arch|
             library = "build-#{arch}/lib#{@spec.name}.a"
             library
           end
-        else
-          libs = ios_architectures.map do |arch|
-            library = "build/package-#{@spec.name}-#{arch}.a"
-            # libtool -arch_only arm64 -static -o build/package-armv64.a build/libIMYFoundation.a build-simulator/libIMYFoundation.a
-            # 从liBFoundation.a 文件中，提取出 arm64 架构的文件，命名为build/package-armv64.a
-            UI.message "libtool -arch_only #{arch} -static -o #{library} #{static_libs.join(' ')}"
-            `libtool -arch_only #{arch} -static -o #{library} #{static_libs.join(' ')}`
-            library
-          end
-        end
+        # else
+        #   libs = ios_architectures.map do |arch|
+        #     library = "build/package-#{@spec.name}-#{arch}.a"
+        #     # libtool -arch_only arm64 -static -o build/package-armv64.a build/libIMYFoundation.a build-simulator/libIMYFoundation.a
+        #     # 从liBFoundation.a 文件中，提取出 arm64 架构的文件，命名为build/package-armv64.a
+        #     UI.message "libtool -arch_only #{arch} -static -o #{library} #{static_libs.join(' ')}"
+        #     `libtool -arch_only #{arch} -static -o #{library} #{static_libs.join(' ')}`
+        #     library
+        #   end
+        # end
 
         UI.message "lipo -create -output #{output} #{libs.join(' ')}"
         `lipo -create -output #{output} #{libs.join(' ')}`
@@ -166,15 +162,15 @@ module CBin
         defines += @spec.consumer(@platform).compiler_flags.join(' ')
 
         options = ios_build_options
-        if is_debug_model
+        # if is_debug_model
           archs = ios_architectures
           # archs = %w[arm64 armv7 armv7s]
           archs.map do |arch|
             xcodebuild(defines, "ARCHS=\'#{arch}\' OTHER_CFLAGS=\'-fembed-bitcode -Qunused-arguments\'","build-#{arch}",@build_model)
           end
-        else
-          xcodebuild(defines,options)
-        end
+        # else
+          # xcodebuild(defines,options)
+        # end
 
         defines
       end
@@ -193,7 +189,7 @@ module CBin
         # end
       end
 
-      def xcodebuild(defines = '', args = '', build_dir = 'build',build_model = 'Debug')
+      def xcodebuild(defines = '', args = '', build_dir = 'build', build_model = 'Debug')
 
         unless File.exist?("Pods.xcodeproj") #cocoapods-generate v2.0.0
           command = "xcodebuild #{defines} #{args} CONFIGURATION_BUILD_DIR=#{File.join(File.expand_path("..", build_dir), File.basename(build_dir))} clean build -configuration #{build_model} -target #{target_name} -project ./Pods/Pods.xcodeproj 2>&1"
@@ -221,7 +217,12 @@ module CBin
 
         #by slj 如果没有头文件，去 "Headers/Public"拿
         # if public_headers.empty?
-        Dir.chdir("./Headers/Public/#{@spec.name}") do
+        spec_header_dir = "./Headers/Public/#{@spec.name}"
+        unless File.exist?(spec_header_dir)
+          spec_header_dir = "./Pods/Headers/Public/#{@spec.name}"
+        end
+        raise "copy_headers #{spec_header_dir} no exist " unless File.exist?(spec_header_dir)
+        Dir.chdir(spec_header_dir) do
           headers = Dir.glob('*.h')
           headers.each do |h|
             public_headers << Pathname.new(File.join(Dir.pwd,h))
@@ -270,8 +271,11 @@ module CBin
       end
 
       def copy_resources
+        resource_dir = './build/*.bundle'
+        resource_dir = './build-armv7/*.bundle' if File.exist?('./build-armv7')
+        resource_dir = './build-arm64/*.bundle' if File.exist?('./build-arm64')
 
-        bundles = Dir.glob('./build/*.bundle')
+        bundles = Dir.glob(resource_dir)
 
         bundle_names = [@spec, *@spec.recursive_subspecs].flat_map do |spec|
           consumer = spec.consumer(@platform)
@@ -292,7 +296,13 @@ module CBin
           `cp -rp #{bundle_files} #{framework.resources_path} 2>&1`
         end
 
-        real_source_dir = @isRootSpec ? @source_dir : Pathname.new(File.join(Dir.pwd,"#{@spec.name}"))
+        spec_source_dir = File.join(Dir.pwd,"#{@spec.name}")
+        unless File.exist?(spec_source_dir)
+          spec_source_dir = File.join(Dir.pwd,"Pods/#{@spec.name}")
+        end
+        raise "copy_resources #{spec_source_dir} no exist " unless File.exist?(spec_source_dir)
+
+        real_source_dir = @isRootSpec ? @source_dir : spec_source_dir
         resources = [@spec, *@spec.recursive_subspecs].flat_map do |spec|
           expand_paths(real_source_dir, spec.consumer(@platform).resources)
         end.compact.uniq
