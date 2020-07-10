@@ -18,6 +18,8 @@ cocoapods-imy-bin插件所关联的组件二进制化策略：
 
 > [iOS编译速度如何稳定提高10倍以上](https://www.jianshu.com/p/08cffdfa2885)
 >
+> [iOS美团同款"ZSource"二进制调试实现](https://juejin.im/post/5f066cfa5188252e893a136e)
+>
 > [Demo](https://github.com/su350380433/cocoapods-imy-bin-demo)
 >
 
