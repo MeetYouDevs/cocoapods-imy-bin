@@ -204,8 +204,7 @@ pod YYModel :path => '../' #提交的时候往往要修改回来才提交，操�
 ```
 用法：
 
-在与Podfile同级目录下，新增一个`Podfile_local`文件,模板可到这里下载Podfile_local
-
+在与Podfile同级目录下，新增一个`Podfile_local`文件
 
 ```ruby
 #target 'Seeyou' do 不同的项目注意修改下Seeyou的值
