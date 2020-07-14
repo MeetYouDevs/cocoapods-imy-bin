@@ -79,7 +79,7 @@ download_file_type: zip
 
 按提示输入`所属环境`、源码私有源、二进制私有源、二进制下载地址、下载文件类型后，插件就配置完成了。其中 `binary_download_url` 需要预留组件名称与组件版本占位符，插件内部会依次替换 `%s` 为相应组件的值。
 
-`cococapod-bin` 也支持从 url 下载配置文件，方便对多台机器进行配置：
+`cococapods-imy-bin` 也支持从 url 下载配置文件，方便对多台机器进行配置：
 
 ```shell
 ➜  ~ pod bin init --bin-url=https://github.com/su350380433/cocoapods-imy-bin-configs/raw/master/bin_dev.yml
