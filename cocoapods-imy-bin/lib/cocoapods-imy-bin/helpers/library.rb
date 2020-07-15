@@ -38,12 +38,12 @@ module CBin
 
     def make_headers
       @headers_path = @versions_path + Pathname.new('Headers')
-      # @headers_path.mkpath unless @headers_path.exist?
+      @headers_path.mkpath unless @headers_path.exist?
     end
 
     def make_resources
       @resources_path = @versions_path + Pathname.new('Resources')
-      # @resources_path.mkpath unless @resources_path.exist?
+      @resources_path.mkpath unless @resources_path.exist?
     end
 
     def make_root

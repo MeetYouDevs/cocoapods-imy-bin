@@ -83,11 +83,6 @@ module Pod
           FileUtils.rm_rf(target_path)
 
           find_dependency = find_dependency(name)
-          # 意义不大，需要可以使用--source参数 对 github-ios 仓库对做特殊处理
-          # if find_dependency && find_dependency.external_source[:podspec].include?(http_gitlib_GitHub_iOS_path)
-          #   github_ios = find_dependency.external_source[:podspec]
-            # find_dependency.external_source[:podspec] = github_ios.gsub(http_gitlib_GitHub_iOS_path,http_gitlib_iOS_path)
-          # end
 
           spec = fetch_external_source(find_dependency, @config.podfile,@config.lockfile, @config.sandbox,true )
 
@@ -106,7 +101,6 @@ module Pod
               break
             end
           end
-
           find_dependency
         end
 
@@ -150,6 +144,7 @@ module Pod
             FileUtils.rm_rf(File.join(dir,basename))
             `ln -s #{target_path} #{dir}/#{basename}`
           end
+
           check(lib_file,dir,basename)
         end
 

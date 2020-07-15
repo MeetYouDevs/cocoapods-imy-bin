@@ -49,7 +49,7 @@ module Pod
         end
 
         def self.load_local_podfile
-          # 同步 BinPodfile 文件
+          # 同步 Podfile_local 文件
           project_root = Pod::Config.instance.project_root
           path = File.join(project_root.to_s, 'Podfile_local')
           unless File.exist?(path)
@@ -73,25 +73,31 @@ module Pod
 
             podfile.instance_eval do
               begin
+
+                # podfile HASH_KEYS才有plugins字段，否则会被限制
+                if local_podfile.plugins.any?
+                  hash_plugins = podfile.plugins || {}
+                  hash_plugins = hash_plugins.merge(local_podfile.plugins)
+                  set_hash_value(%w[plugins].first, hash_plugins)
+
+                  # 加入源码白名单，避免本地库被二进制了
+                  podfile.set_use_source_pods(local_podfile.use_source_pods) if local_podfile.use_source_pods
+                  podfile.use_binaries!(local_podfile.use_binaries?)
+                end
+
                 # 在target把local-target中到dependencies值删除了，再设置
                 # 把本地和原始到dependencies 合并，设置dependencies
                 local_podfile&.target_definition_list&.each do |local_target|
                   next if local_target.name == 'Pods'
 
                   target_definition_list.each do |target|
-                    unless target.name == local_target.name && local_target.to_hash['dependencies'].any?
+
+                    unless target.name == local_target.name &&
+                        (local_target.to_hash['dependencies'] &&local_target.to_hash['dependencies'].any?)
                       next
                     end
 
-                    # podfile HASH_KEYS才有plugins字段，否则会被限制
-                    if local_podfile.plugins.any?
-                      hash_plugins = podfile.plugins || {}
-                      hash_plugins = hash_plugins.merge(local_podfile.plugins)
-                      set_hash_value(%w[plugins].first, hash_plugins)
-                    end
-                    # 加入源码白名单，避免本地库被二进制了
-                    podfile.set_use_source_pods(local_podfile.use_source_pods) if local_podfile.use_source_pods
-                    podfile.use_binaries!(true) if local_podfile.use_binaries?
+
 
                     target.instance_exec do
                       # 在target把local-target中到dependencies值删除了，再设置
@@ -125,7 +131,9 @@ module Pod
 
                     end
                   end
+
                 end
+
                 if local_pre_install_callback
                   @pre_install_callback = local_pre_install_callback
                 end

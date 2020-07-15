@@ -51,7 +51,7 @@ module CBin
         source_dir = Dir.pwd
         file_accessor = Sandbox::FileAccessor.new(Pathname.new('.').expand_path, @spec.consumer(@platform))
         Dir.chdir(workspace_directory) do
-          builder = CBin::Framework::Builder.new(@spec, file_accessor, @platform, source_dir,@isRootSpec)
+          builder = CBin::Framework::Builder.new(@spec, file_accessor, @platform, source_dir, @isRootSpec, @build_model )
           @@build_defines = builder.build if @isRootSpec
           begin
             @framework_path = builder.lipo_build(@@build_defines) unless @skip_archive
