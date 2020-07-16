@@ -106,7 +106,7 @@ module CBin
 
         # if is_debug_model
           libs = (ios_architectures + ios_architectures_sim) .map do |arch|
-            library = "build-#{arch}/lib#{@spec.name}.a"
+            library = "build-#{arch}/lib#{target_name}.a"
             library
           end
         # else
@@ -182,11 +182,11 @@ module CBin
       def target_name
         #区分多平台，如配置了多平台，会带上平台的名字
         # 如libwebp-iOS
-        # if @spec.available_platforms.count > 1
-        #   "#{@spec.name}-#{Platform.string_name(@spec.consumer(@platform).platform_name)}"
-        # else
+        if @spec.available_platforms.count > 1
+          "#{@spec.name}-#{Platform.string_name(@spec.consumer(@platform).platform_name)}"
+        else
           @spec.name
-        # end
+        end
       end
 
       def xcodebuild(defines = '', args = '', build_dir = 'build', build_model = 'Debug')
