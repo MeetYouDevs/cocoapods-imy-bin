@@ -155,10 +155,14 @@ module Pod
                   "--sources=#{sources_option(@code_dependencies, @sources)}",
                   "--gen-directory=#{CBin::Config::Builder.instance.gen_dir}",
                   '--clean',
-                  '--use-podfile',
                   *@additional_args
                 ]
 
+                podfile= File.join(Pathname.pwd, "Podfile")
+                if File.exist?(podfile)
+                  argvs += ['--use-podfile']
+                end
+                
                 argvs << spec_file if spec_file
 
                 gen = Pod::Command::Gen.new(CLAide::ARGV.new(argvs))
