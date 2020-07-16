@@ -295,14 +295,17 @@ module CBin
           bundle_files = bundles.join(' ')
           `cp -rp #{bundle_files} #{framework.resources_path} 2>&1`
         end
+        
+        real_source_dir = @source_dir
+        unless @isRootSpec
+          spec_source_dir = File.join(Dir.pwd,"#{@spec.name}")
+          unless File.exist?(spec_source_dir)
+            spec_source_dir = File.join(Dir.pwd,"Pods/#{@spec.name}")
+          end
+          raise "copy_resources #{spec_source_dir} no exist " unless File.exist?(spec_source_dir)
 
-        spec_source_dir = File.join(Dir.pwd,"#{@spec.name}")
-        unless File.exist?(spec_source_dir)
-          spec_source_dir = File.join(Dir.pwd,"Pods/#{@spec.name}")
+          real_source_dir = spec_source_dir
         end
-        raise "copy_resources #{spec_source_dir} no exist " unless File.exist?(spec_source_dir)
-
-        real_source_dir = @isRootSpec ? @source_dir : spec_source_dir
         resources = [@spec, *@spec.recursive_subspecs].flat_map do |spec|
           expand_paths(real_source_dir, spec.consumer(@platform).resources)
         end.compact.uniq
