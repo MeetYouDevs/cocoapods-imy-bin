@@ -106,7 +106,7 @@ module CBin
 
         # if is_debug_model
           libs = (ios_architectures + ios_architectures_sim) .map do |arch|
-            library = "build-#{arch}/lib#{@spec.name}.a"
+            library = "build-#{arch}/lib#{target_name}.a"
             library
           end
         # else
@@ -182,11 +182,11 @@ module CBin
       def target_name
         #区分多平台，如配置了多平台，会带上平台的名字
         # 如libwebp-iOS
-        # if @spec.available_platforms.count > 1
-        #   "#{@spec.name}-#{Platform.string_name(@spec.consumer(@platform).platform_name)}"
-        # else
+        if @spec.available_platforms.count > 1
+          "#{@spec.name}-#{Platform.string_name(@spec.consumer(@platform).platform_name)}"
+        else
           @spec.name
-        # end
+        end
       end
 
       def xcodebuild(defines = '', args = '', build_dir = 'build', build_model = 'Debug')
@@ -295,14 +295,17 @@ module CBin
           bundle_files = bundles.join(' ')
           `cp -rp #{bundle_files} #{framework.resources_path} 2>&1`
         end
+        
+        real_source_dir = @source_dir
+        unless @isRootSpec
+          spec_source_dir = File.join(Dir.pwd,"#{@spec.name}")
+          unless File.exist?(spec_source_dir)
+            spec_source_dir = File.join(Dir.pwd,"Pods/#{@spec.name}")
+          end
+          raise "copy_resources #{spec_source_dir} no exist " unless File.exist?(spec_source_dir)
 
-        spec_source_dir = File.join(Dir.pwd,"#{@spec.name}")
-        unless File.exist?(spec_source_dir)
-          spec_source_dir = File.join(Dir.pwd,"Pods/#{@spec.name}")
+          real_source_dir = spec_source_dir
         end
-        raise "copy_resources #{spec_source_dir} no exist " unless File.exist?(spec_source_dir)
-
-        real_source_dir = @isRootSpec ? @source_dir : spec_source_dir
         resources = [@spec, *@spec.recursive_subspecs].flat_map do |spec|
           expand_paths(real_source_dir, spec.consumer(@platform).resources)
         end.compact.uniq
