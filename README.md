@@ -4,6 +4,15 @@
  
 # Cocoapods-imy-bin
 
+关于 插件具体的架构部署实践和更详细的资源，可以参考
+
+> [iOS编译速度如何稳定提高10倍以上](https://www.jianshu.com/p/08cffdfa2885)
+>
+> [iOS美团同款"ZSource"二进制调试实现](https://juejin.im/post/5f066cfa5188252e893a136e)
+>
+> [Demo](https://github.com/su350380433/cocoapods-imy-bin-demo)
+>
+
 
 ### 特色：
 
@@ -28,14 +37,6 @@ cocoapods-imy-bin插件所关联的组件二进制化策略：
 
 预先将打包成 `.a`  的组件保存到静态服务器上，并在 `install` 时，去下载组件对应的二进制版本，以减少组件编译时间，达到加快 App 打包、组件发布等操作的目的。
 
-关于 插件具体的架构部署实践和更详细的资源，可以参考
-
-> [iOS编译速度如何稳定提高10倍以上](https://www.jianshu.com/p/08cffdfa2885)
->
-> [iOS美团同款"ZSource"二进制调试实现](https://juejin.im/post/5f066cfa5188252e893a136e)
->
-> [Demo](https://github.com/su350380433/cocoapods-imy-bin-demo)
->
 
 
 ## 二、准备工作
