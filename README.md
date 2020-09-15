@@ -12,6 +12,7 @@
 >
 > [Demo](https://github.com/su350380433/cocoapods-imy-bin-demo)
 >
+> [iOS教你如何像RN一样实时编译](https://juejin.im/post/6850037272415813645)
 
 
 ### 特色：
