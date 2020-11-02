@@ -1,6 +1,7 @@
 
 
- 
+### 更新
+-v0.3.0.11 支持纯Swift、Swift-OC版本
  
 # Cocoapods-imy-bin
 
