@@ -38,9 +38,12 @@ module CBin
 
           build_static_framework
           unless @skip_archive
-            build_static_library
-            zip_static_framework if @zip &&= @framework_output
-            zip_static_library
+            unless  CBin::Build::Utils.is_framework(@spec)
+              build_static_library
+              zip_static_library
+            else
+              zip_static_framework
+            end
           end
 
         end
@@ -71,15 +74,15 @@ module CBin
       end
 
       def zip_static_framework
-        Dir.chdir(zip_dir) do
-          output_name = "#{framework_name}.zip"
+        Dir.chdir(File.join(workspace_directory,@framework_path.root_path)) do
+          output_name =  File.join(zip_dir, framework_name_zip)
           unless File.exist?(framework_name)
-            raise Informative, "没有需要压缩的 framework 文件：#{framework_name}"
+            UI.puts "没有需要压缩的 framework 文件：#{framework_name}"
+            return
           end
 
           UI.puts "Compressing #{framework_name} into #{output_name}"
           `zip --symlinks -r #{output_name} #{framework_name}`
-
         end
       end
 
@@ -114,6 +117,10 @@ module CBin
         CBin::Config::Builder.instance.framework_name(@spec)
       end
 
+      def framework_name_zip
+        CBin::Config::Builder.instance.framework_name_version(@spec) + ".zip"
+      end
+
       def library_name
         CBin::Config::Builder.instance.library_name(@spec)
       end
@@ -129,6 +136,7 @@ module CBin
       def gen_name
         CBin::Config::Builder.instance.gen_dir
       end
+
 
       def spec_file
         @spec_file ||= begin

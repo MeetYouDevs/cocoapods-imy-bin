@@ -12,6 +12,7 @@ module CBin
 
       def initialize
         load_build_config
+        # clean
       end
 
       # 加载配置项
@@ -35,6 +36,13 @@ module CBin
 
       end
 
+      def clean
+        #清除之前的缓存
+        FileUtils.rm_rf(Dir.glob("#{zip_dir}/*")) if File.exist?(zip_dir)
+        FileUtils.rm_rf(Dir.glob("#{binary_json_dir}/*")) if File.exist?(binary_json_dir)
+        FileUtils.rm_rf(Dir.glob("#{local_psec_dir}/*")) if File.exist?(local_psec_dir)
+      end
+
       # 制作二进制打包 工程目录
       def gen_name
         'bin-archive'
@@ -49,8 +57,17 @@ module CBin
                      end
       end
 
+
       def framework_name(spec)
         "#{spec.name}.framework"
+      end
+
+      def framework_name_version(spec)
+        "#{spec.name}.framework_#{spec.version}"
+      end
+
+      def framework_zip_file(spec)
+        File.join(zip_dir_name, framework_name_version(spec))
       end
 
       def framework_file(spec)
@@ -110,7 +127,8 @@ module CBin
       #编译target名，如 seeyou
       def target_name
         @target_name ||= begin
-                           Pod::Config.instance.podfile.root_target_definitions.first.children.first.to_s.split('-').last
+                           target_name_str =  Pod::Config.instance.podfile.root_target_definitions.first.children.first.to_s
+                           target_name_str[5,target_name_str.length]
                          end
       end
 
@@ -129,6 +147,7 @@ module CBin
                                   if @xcode_build_name.nil? || Dir.exist?(@xcode_build_name)
                                     @xcode_build_name = "xcode-build/Build/Intermediates.noindex/ArchiveIntermediates/#{target_name}/IntermediateBuildFilesPath/UninstalledProducts/iphoneos/"
                                   end
+                                  puts @xcode_build_name
                                   @xcode_build_name
                               end
       end
@@ -146,7 +165,25 @@ module CBin
                                 end
                              end
       end
+      #完整的xcodebuild BuildProductsPath输出路径，
+      def xcode_BuildProductsPath_dir
+        @xcode_BuildProductsPath_dir ||= begin
+                                           temp_xcode_BuildProductsPath_dir = "xcode-build/Build/Intermediates.noindex/ArchiveIntermediates/#{target_name}/BuildProductsPath/"
+                                           full_path = File.join(root_dir, temp_xcode_BuildProductsPath_dir)
 
+                                           if (File.exist?(full_path))
+                                             Dir.chdir(full_path) do
+                                               iphoneos = Dir.glob('*-iphoneos')
+                                               if iphoneos.length > 0
+                                                 full_path = File.join(full_path,iphoneos.first)
+                                               else
+                                                 UI.warn "====== 找不到 *-iphoneos @xcode_BuildProductsPath_dir = #{@xcode_BuildProductsPath_dir}"
+                                               end
+                                             end
+                                           end
+                                           Pathname.new(full_path)
+                                         end
+      end
 
 
       #处理编译产物后存储根目录，会存放spec、 json、zip的父目录，默认是工程的同级目录下，"#{basename}-build-temp"

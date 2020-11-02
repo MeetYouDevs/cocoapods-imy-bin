@@ -21,7 +21,7 @@ module Pod
               ['--all-make', '对该组件的依赖库，全部制作为二进制组件'],
               ['--configuration', 'Build the specified configuration (e.g. Release ). Defaults to Debug'],
               ['--env', "该组件上传的环境 %w[dev debug_iphoneos release_iphoneos]"]
-          ]
+          ].concat(Pod::Command::Gen.options).concat(super).uniq
         end
 
         def initialize(argv)
@@ -41,6 +41,7 @@ module Pod
           @verbose = argv.flag?('verbose',true)
 
           @config = argv.option('configuration', 'Debug')
+          @additional_args = argv.remainder!
 
           super
         end
@@ -56,7 +57,8 @@ module Pod
           sources_sepc.uniq.each do |spec|
             begin
               fail_push_specs << spec unless CBin::Upload::Helper.new(spec,@code_dependencies,@sources).upload
-            rescue
+            rescue  Object => exception
+              UI.puts exception
               fail_push_specs << spec
             end
           end
@@ -86,15 +88,15 @@ module Pod
         end
 
         #制作二进制包
-        # `pod bin archive  --verbose  --code-dependencies --no-clean --sources=https://gitlab.xxx.com/iOS/imyspecs.git,https://cdn.cocoapods.org/ --use-libraries`
+
         def run_archive
           argvs = [
               "--sources=#{sources_option(@code_dependencies, @sources)},https:\/\/cdn.cocoapods.org",
-              "--use-libraries",
-              "--verbose"
+              @additional_args
           ]
 
           argvs << spec_file if spec_file
+          argvs.delete(Array.new)
 
           unless @clean
             argvs += ['--no-clean']

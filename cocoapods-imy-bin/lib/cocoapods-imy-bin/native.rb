@@ -16,4 +16,8 @@ if Pod.match_version?('~> 1.4')
   require 'cocoapods-imy-bin/native/acknowledgements'
   require 'cocoapods-imy-bin/native/sandbox_analyzer'
   require 'cocoapods-imy-bin/native/podspec_finder'
+  require 'cocoapods-imy-bin/native/file_accessor'
+  require 'cocoapods-imy-bin/native/pod_target_installer'
+  require 'cocoapods-imy-bin/native/target_validator'
+
 end

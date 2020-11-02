@@ -13,7 +13,7 @@ Gem::Specification.new do |spec|
   spec.homepage      = 'https://github.com/su350380433/cocaopods-imy-bin'
   spec.license       = 'MIT'
 
-  spec.files = Dir["lib/**/*.rb","spec/**/*.rb"] + %w{README.md LICENSE.txt }
+  spec.files = Dir["lib/**/*.rb","spec/**/*.rb","lib/**/*.plist"] + %w{README.md LICENSE.txt }
 
   #spec.files         = `git ls-files`.split($/)
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }

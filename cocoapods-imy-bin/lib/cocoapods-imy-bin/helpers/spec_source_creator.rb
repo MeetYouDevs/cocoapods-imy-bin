@@ -20,12 +20,12 @@ module CBin
       end
 
       def create
-        spec = create_from_code_spec
-
-        # Pod::UI.message '生成二进制 podspec 内容: '
-        # spec.to_pretty_json.split("\n").each do |text|
-          # Pod::UI.message text
-        # end
+        # spec = nil
+        if CBin::Build::Utils.is_framework(@code_spec)
+          spec = create_framework_from_code_spec
+        else
+          spec = create_from_code_spec
+        end
 
         spec
       end
@@ -121,11 +121,68 @@ module CBin
         @spec.vendored_libraries = binary_vendored_libraries
         @spec.resources = binary_resources if @spec.attributes_hash.keys.include?("resources")
         @spec.description = <<-EOF
-         「   converted automatically by plugin cocoapods-imy-bin @slj    」
+         「   converted automatically by plugin cocoapods-imy-bin @厦门美柚 - slj    」
           #{@spec.description}
-EOF
+        EOF
         @spec
       end
+
+      def create_framework_from_code_spec
+        @spec = code_spec.dup
+        # vendored_frameworks | resources | source | source_files | public_header_files
+        # license | resource_bundles | vendored_libraries
+
+        # Project Linkin
+        @spec.vendored_frameworks = "#{code_spec.root.name}.framework"
+
+        # Resources
+        extnames = []
+        extnames << '*.bundle' if code_spec_consumer.resource_bundles.any?
+        if code_spec_consumer.resources.any?
+          extnames += code_spec_consumer.resources.map { |r| File.basename(r) }
+        end
+        if extnames.any?
+          @spec.resources = framework_contents('Resources').flat_map { |r| extnames.map { |e| "#{r}/#{e}" } }
+        end
+
+        # Source Location
+        @spec.source = binary_source
+
+        # Source Code
+        # @spec.source_files = framework_contents('Headers/*')
+        # @spec.public_header_files = framework_contents('Headers/*')
+
+        # Unused for binary
+        spec_hash = @spec.to_hash
+        # spec_hash.delete('license')
+        spec_hash.delete('resource_bundles')
+        spec_hash.delete('exclude_files')
+        spec_hash.delete('preserve_paths')
+        # 这里不确定 vendored_libraries 指定的时动态/静态库
+        # 如果是静态库的话，需要移除，否则就不移除
+        # 最好是静态库都独立成 Pod ，cocoapods-package 打静态库去 collect 目标文件时好做过滤
+        # 这里统一只对命名后缀 .a 文件做处理
+        # spec_hash.delete('vendored_libraries')
+        # libraries 只能假设为动态库不做处理了，如果有例外，需要开发者自行处理
+        vendored_libraries = spec_hash.delete('vendored_libraries')
+        vendored_libraries = Array(vendored_libraries).reject { |l| l.end_with?('.a') }
+        if vendored_libraries.any?
+          spec_hash['vendored_libraries'] = vendored_libraries
+        end
+
+        # Filter platforms
+        platforms = spec_hash['platforms']
+        selected_platforms = platforms.select { |k, _v| @platforms.include?(k) }
+        spec_hash['platforms'] = selected_platforms.empty? ? platforms : selected_platforms
+
+        @spec = Pod::Specification.from_hash(spec_hash)
+        @spec.description = <<-EOF
+         「   converted automatically by plugin cocoapods-imy-bin @厦门美柚 - slj    」
+          #{@spec.description}
+        EOF
+        @spec
+      end
+
 
       def binary_source
         { http: format(CBin.config.binary_download_url, code_spec.root.name, code_spec.version), type: CBin.config.download_file_type }

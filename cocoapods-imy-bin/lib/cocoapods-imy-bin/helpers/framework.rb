@@ -7,6 +7,8 @@ module CBin
     attr_reader :resources_path
     attr_reader :root_path
     attr_reader :versions_path
+    attr_reader :swift_module_path
+    attr_reader :fwk_path
 
     def initialize(name, platform)
       @name = name
@@ -22,8 +24,24 @@ module CBin
     end
 
     def delete_resources
-      Pathname.new(@resources_path).rmtree
-      (Pathname.new(@fwk_path) + Pathname.new('Resources')).delete
+      Pathname.new(@resources_path).rmtree if File.exist? (@resources_path)
+      (Pathname.new(@fwk_path) + Pathname.new('Resources')).delete if File.exist?(Pathname.new(@fwk_path) + Pathname.new('Resources'))
+    end
+
+    def remove_current_version
+      FileUtils.rm_f(File.join(@fwk_path,@name))
+      FileUtils.rm_f(File.join(@fwk_path,"Headers"))
+      FileUtils.rm_f(File.join(@fwk_path,"Resources"))
+
+      FileUtils.cp_r("#{@versions_path}/.", @fwk_path)
+      # FileUtils.remove_dir(@versions_path)
+      FileUtils.remove_dir("#{@fwk_path}/Versions")
+
+      # current_version_path = @versions_path + Pathname.new('../Current')
+      # `ln -sf A #{current_version_path}`
+      # `ln -sf Versions/Current/Headers #{@fwk_path}/`
+      # `ln -sf Versions/Current/Resources #{@fwk_path}/`
+      # `ln -sf Versions/Current/#{@name} #{@fwk_path}/`
     end
 
     private
@@ -36,11 +54,16 @@ module CBin
       `ln -sf Versions/Current/#{@name} #{@fwk_path}/`
     end
 
+
+
     def make_framework
       @fwk_path = @root_path + Pathname.new(@name + '.framework')
       @fwk_path.mkdir unless @fwk_path.exist?
 
       @module_map_path = @fwk_path + Pathname.new('Modules')
+      @swift_module_path = @module_map_path + Pathname.new(@name + '.swiftmodule')
+
+
       @versions_path = @fwk_path + Pathname.new('Versions/A')
     end
 

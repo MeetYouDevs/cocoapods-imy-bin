@@ -61,11 +61,11 @@ module Pod
 
         def run
           # 清除之前的缓存
-          temp = File.join(@local_build_dir, @platform.to_s)
-          FileUtils.rm_r(temp) if File.exist? temp
-          if File.exist?(CBin::Config::Builder.instance.zip_dir)
-            FileUtils.rm_r(CBin::Config::Builder.instance.zip_dir)
-          end
+          # temp = File.join(@local_build_dir, @platform.to_s)
+          # FileUtils.rm_r(temp) if File.exist? temp
+          # if File.exist?(CBin::Config::Builder.instance.zip_dir)
+          #   FileUtils.rm_rf(Dir.glob("#{CBin::Config::Builder.instance.zip_dir}/*"))
+          # end
 
           sources_spec = []
           Dir.chdir(CBin::Config::Builder.instance.local_psec_dir) do
@@ -107,6 +107,7 @@ module Pod
             # 获取没有制作二进制版本的spec集合
             sources_sepc << spec
           end
+
           fail_build_specs = []
           sources_sepc.uniq.each do |spec|
             begin
@@ -146,9 +147,17 @@ module Pod
         private
 
         def library_exist(spec)
-          File.exist?(File.join(@local_build_dir, "lib#{spec.name}.a"))
+          File.exist?(File.join(@local_build_dir, "lib#{spec.name}.a")) || is_framework(spec)
         end
-
+        # 使用了user_framework 会有#{@spec.name}.framework
+        # 未使用的 需要判断文件
+        def is_framework(spec)
+          res = File.exist?(File.join(@local_build_dir, "#{spec.name}.framework"))
+          unless res
+            res = File.exist?(File.join(CBin::Config::Builder.instance.xcode_BuildProductsPath_dir, "#{spec.name}","Swift Compatibility Header"))
+          end
+          res
+        end
 
       end
     end

@@ -14,44 +14,7 @@ module Pod
     # Perform analysis for a given spec (or subspec)
     #
     def perform_extensive_analysis(spec)
-      if spec.non_library_specification?
-        error('spec', "Validating a non library spec (`#{spec.name}`) is not supported.")
-        return false
-      end
-      validate_homepage(spec)
-      validate_screenshots(spec)
-      validate_social_media_url(spec)
-      validate_documentation_url(spec)
-      validate_source_url(spec)
-
-      platforms = platforms_to_lint(spec)
-
-      valid = platforms.send(fail_fast ? :all? : :each) do |platform|
-        UI.message "\n\n#{spec} - Analyzing on #{platform} platform.".green.reversed
-        @consumer = spec.consumer(platform)
-        setup_validation_environment
-        begin
-          create_app_project
-          # download_pod
-          # check_file_patterns
-          # install_pod
-          # validate_swift_version
-          # add_app_project_import
-          # validate_vendored_dynamic_frameworks
-          # build_pod
-          # test_pod unless skip_tests
-        ensure
-          tear_down_validation_environment
-        end
-        validated?
-      end
-      return false if fail_fast && !valid
-      perform_extensive_subspec_analysis(spec) unless @no_subspecs
-    rescue => e
-      message = e.to_s
-      message << "\n" << e.backtrace.join("\n") << "\n" if config.verbose?
-      error('unknown', "Encountered an unknown error (#{message}) during validation.")
-      false
+      return true
     end
 
     #覆盖

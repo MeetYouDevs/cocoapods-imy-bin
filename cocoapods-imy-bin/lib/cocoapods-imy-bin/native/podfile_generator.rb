@@ -126,6 +126,14 @@ module Pod
                   break
                 end
               end
+              # setting modular_headers_for
+              if(target_definition && target_definition.use_modular_headers_hash.values.any?)
+                target_definition.use_modular_headers_hash.values.each do |f|
+                  f.each { | pod_name|  self.set_use_modular_headers_for_pod(pod_name, true) }
+                end
+              end
+
+
               if target_definition
                 value = target_definition.to_hash['dependencies']
                 next if value.blank?
@@ -139,14 +147,15 @@ module Pod
                 old_value = self.to_hash['dependencies'].first
                 value << old_value unless (old_value == nil || value.include?(old_value))
 
-               set_hash_value(%w(dependencies).first, value)
+                set_hash_value(%w(dependencies).first, value)
 
                 value = target_definition.to_hash['configuration_pod_whitelist']
                 next if value.blank?
                 set_hash_value(%w(configuration_pod_whitelist).first, value)
 
-                # self.children = Array.new
+
               end
+
 
             end
 

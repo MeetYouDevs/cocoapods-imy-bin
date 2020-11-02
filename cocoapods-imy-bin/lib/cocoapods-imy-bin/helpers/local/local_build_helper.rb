@@ -34,15 +34,20 @@ module CBin
         @local_build_dir = local_build_dir
         @clean = clean
         @framework_path
+        @is_library = !is_framework
       end
 
       def build
         UI.section("Building static framework #{@spec}") do
 
           build_static_framework
-          build_static_library
-          zip_static_framework if @zip &&= @framework_output
-          zip_static_library
+          if @is_library
+            build_static_library
+            zip_static_framework if @zip &&= @framework_output
+            zip_static_library
+          else
+            zip_static_framework
+          end
 
           clean_workspace if @clean
         end
@@ -52,7 +57,7 @@ module CBin
       def build_static_framework
         file_accessor = Sandbox::FileAccessor.new(Pathname.new('.').expand_path, @spec.consumer(@platform))
         Dir.chdir(workspace_directory) do
-          builder = CBin::LocalFramework::Builder.new(@spec, file_accessor, @platform, @local_build_dir_name,@local_build_dir)
+          builder = CBin::LocalFramework::Builder.new(@spec, file_accessor, @platform, @local_build_dir_name,@local_build_dir, @is_library, frameWork_dir)
           @framework_path = builder.create
         end
       end
@@ -68,9 +73,10 @@ module CBin
 
       def zip_static_framework
         Dir.chdir(zip_dir) do
-          output_name = "#{framework_name}.zip"
+          # output_name = "#{framework_name}.zip"
+          output_name =  File.join(zip_dir, framework_name_zip)
           unless File.exist?(framework_name)
-            raise Informative, "没有需要压缩的 framework 文件：#{framework_name}"
+            UI.warn "没有需要压缩的 framework 文件：#{framework_name}"
           end
 
           UI.puts "Compressing #{framework_name} into #{output_name}"
@@ -110,6 +116,10 @@ module CBin
         CBin::Config::Builder.instance.framework_name(@spec)
       end
 
+      def framework_name_zip
+        CBin::Config::Builder.instance.framework_name_version(@spec) + ".zip"
+      end
+
       def library_name
         CBin::Config::Builder.instance.library_name(@spec)
       end
@@ -124,6 +134,28 @@ module CBin
 
       def gen_name
         CBin::Config::Builder.instance.gen_name
+      end
+
+      def is_library
+        File.exist?(File.join(@local_build_dir, "lib#{@spec.name}.a"))
+      end
+
+      # 使用了user_framework 会有#{@spec.name}.framework
+      # 未使用的 需要判断文件
+      def is_framework
+        res = File.exist?(File.join(@local_build_dir, "#{@spec.name}.framework"))
+        unless res
+          res = File.exist?(File.join(CBin::Config::Builder.instance.xcode_BuildProductsPath_dir, "#{@spec.name}","Swift Compatibility Header"))
+        end
+        res
+      end
+
+      def frameWork_dir
+        dir = File.join(@local_build_dir, "#{@spec.name}.framework")
+        unless File.exist?(dir)
+          dir = File.join(CBin::Config::Builder.instance.xcode_BuildProductsPath_dir, "#{@spec.name}")
+        end
+        dir
       end
 
       def spec_file

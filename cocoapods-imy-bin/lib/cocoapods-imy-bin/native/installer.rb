@@ -1,7 +1,7 @@
-
-
+require 'cocoapods/installer/project_cache/target_metadata.rb'
 require 'parallel'
 require 'cocoapods'
+require 'xcodeproj'
 require 'cocoapods-imy-bin/native/pod_source_installer'
 
 module Pod
@@ -91,6 +91,26 @@ module Pod
             create_pod_installer(spec.name)
           end
         end
+      end
+    end
+
+    alias old_write_lockfiles write_lockfiles
+    def write_lockfiles
+      old_write_lockfiles
+      if File.exist?('Podfile_local')
+
+        project = Xcodeproj::Project.open(config.sandbox.project_path)
+        #获取主group
+        group = project.main_group
+        group.set_source_tree('SOURCE_ROOT')
+        #向group中添加 文件引用
+        file_ref = group.new_reference(config.sandbox.root + '../Podfile_local')
+        #podfile_local排序
+        podfile_local_group = group.children.last
+        group.children.pop
+        group.children.unshift(podfile_local_group)
+        #保存
+        project.save
       end
     end
   end
