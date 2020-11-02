@@ -475,6 +475,5 @@ install! 'cocoapods', { install_with_multi_threads: false }
 [美团 iOS 工程 zsource 命令背后的那些事儿](https://tech.meituan.com/2019/08/08/the-things-behind-the-ios-project-zsource-command.html)
 
 #### 您有什么更好的想法，可以提出来，我们一起来实现，共创一个强大的工具平台，同时也欢迎给我们提PR。 
-研发不易，走过路过的点个星星✨，让更多的人来加入我们，让我们一起来交流学习更上一层~
 
 微信号：su1231235
