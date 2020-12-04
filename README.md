@@ -482,4 +482,3 @@ install! 'cocoapods', { install_with_multi_threads: false }
 #### 您有什么更好的想法，可以提出来，我们一起来实现，共创一个强大的工具平台，同时也欢迎给我们提PR。 
 
 
-加技术讨论群，微信号：su1231235 （备注 cocoapods-imy-bin加群）提问到issue
