@@ -9,7 +9,7 @@
 
 关于 插件具体的架构部署实践和更详细的资源，可以参考
 
-> [iOS编译速度如何稳定提高10倍以上](https://juejin.im/post/5eccceb9f265da76f30e4e13)
+> [iOS编译速度如何稳定提高10倍以上](https://juejin.cn/post/6903407900006449160)
 >
 > [iOS美团同款"ZSource"二进制调试实现](https://juejin.im/post/5f066cfa5188252e893a136e)
 >
