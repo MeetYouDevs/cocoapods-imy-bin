@@ -145,42 +145,11 @@ download_file_type: zip
 pod bin auto
 ```
 
-带上`—all-make`参数会把当前组件所依赖的组件都自动化制作成二进制组件。
-
-```shell
-pod bin local
-```
-
-pod bin local 是配合其他三方编译产物的命令，需要配置编译产物的目录。
-
-`BinArchive.json`是制作二进制的一些配置项，放在项目跟目录下：
-
-``` json
-{
-    "//": "archive-white-pod-list 不制作二进制白名单，",
-    "archive-white-pod-list" : [
-        "YYTargetDemo",
-        "YYModel"
-    ],
-    "//": "ignore-git-list 不制作二进制 所属git白名单，",
-    "ignore-git-list": [
-        "git@gitlab.xxx.com:Github-iOS"
-    ],
-     "//": "ignore-http-list 不制作二进制 所属https白名单，",
-    "ignore-http-list": [
-        "https://gitlab.xxx.com/Github-iOS"
-    ],
-    "//": "xcode_build_path 设置编译缓存完整路径, 默认地址如下",
-    "xcode_build_path" : "xcode-build/Build/Intermediates.noindex/ArchiveIntermediates/#{target_name}/IntermediateBuildFilesPath/UninstalledProducts/iphoneos/",
-}
-```
-
-
 <br/>
 
 ### 2. 二进制Podspec 
 
-通过`pod bin auto`和`pod bin local`二进制Podspec 会自动生成、上传，无需关心。
+会自动生成、上传，无需关心。
 
 
 <br/>
