@@ -7,9 +7,9 @@
 
 # 只要两行代码，便可提升10倍以上编译速度
 
-<img src="./img/time.png" alt="time" style="zoom:50%;" />
+<img src="./img/time.png" alt="time" style="zoom:30%;" />
 
-<img src="./img/Podfile.png" alt="Podfile" style="zoom:50%;" />
+<img src="./img/Podfile.png" alt="Podfile" style="zoom:30%;" />
 
 ### 特色：
 
