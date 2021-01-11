@@ -189,8 +189,8 @@ module Pod
                   end
               end
             end
-            return name
           end
+          return name
         end
 
       end
