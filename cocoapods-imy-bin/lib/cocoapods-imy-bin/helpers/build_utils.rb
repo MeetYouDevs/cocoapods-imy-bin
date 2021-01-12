@@ -14,6 +14,22 @@ module CBin
         return Utils.is_swift_module(spec)
       end
 
+      def Utils.spec_header_dir(spec)
+        spec_header_dir = "./Headers/Public/#{spec.name}"
+
+        unless File.exist?(spec_header_dir)
+          spec_header_dir = "./Pods/Headers/Public/#{spec.name}"
+        end
+
+        unless File.exist?(spec_header_dir)
+          # 一些库名称中使用了中划线如AAA-BBB，public header中库名称会默认处理成下划线AAA_BBB
+          module_name = spec.name.gsub("-", "_")
+          spec_header_dir = "./Pods/Headers/Public/#{module_name}"
+        end
+
+        spec_header_dir
+      end
+
       def Utils.is_swift_module(spec)
 
         is_framework = false
@@ -21,12 +37,7 @@ module CBin
         #auto 走这里
         if File.exist?(dir)
           Dir.chdir(dir) do
-            public_headers = Array.new
-            spec_header_dir = "./Headers/Public/#{spec.name}"
-
-            unless File.exist?(spec_header_dir)
-              spec_header_dir = "./Pods/Headers/Public/#{spec.name}"
-            end
+            spec_header_dir = Utils.spec_header_dir(spec)
             return false unless File.exist?(spec_header_dir)
 
             is_framework = File.exist?(File.join(spec_header_dir, "#{spec.name}-umbrella.h"))
