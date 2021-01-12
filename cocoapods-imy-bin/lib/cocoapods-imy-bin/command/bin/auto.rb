@@ -46,11 +46,14 @@ module Pod
           super
         end
 
-        def run
+        def validate!
+          help! "未找到 podspec文件" unless @podspec
+          super
+        end
 
-          unless @podspec
-            raise Informative, "未找到 podspec文件"
-          end
+        def run
+          @specification = Specification.from_file(@podspec)
+
           sources_sepc = run_archive
 
           fail_push_specs = []
@@ -175,6 +178,7 @@ module Pod
 
         #Dir.glob 可替代
         def find_podspec
+          name = nil
           Pathname.pwd.children.each do |child|
             puts child
             if File.file?(child)
@@ -186,6 +190,7 @@ module Pod
               end
             end
           end
+          return name
         end
 
       end
