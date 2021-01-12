@@ -69,16 +69,15 @@ module Pod
           @spec = Specification.from_file(spec_file)
           generate_project
 
-          build_root_spec
+          source_specs = Array.new
+          source_specs.concat(build_root_spec)
+          source_specs.concat(build_dependencies) if @all_make
 
-          sources_sepc = Array.new
-          sources_sepc << @spec
-          sources_sepc.concat(build_dependencies) if @all_make
-
-          sources_sepc
+          source_specs
         end
 
         def build_root_spec
+          source_specs = []
           builder = CBin::Build::Helper.new(@spec,
                                             @platform,
                                             @framework_output,
@@ -88,12 +87,15 @@ module Pod
                                             @config)
           builder.build
           builder.clean_workspace if @clean && !@all_make
+          source_specs << @spec unless CBin::Config::Builder.instance.white_pod_list.include?(@spec.name)
+
+          source_specs
         end
 
         def build_dependencies
           @build_finshed = true
           #如果没要求，就清空依赖库数据
-          sources_sepc = []
+          source_specs = []
           @@missing_binary_specs.uniq.each do |spec|
             next if spec.name.include?('/')
             next if spec.name == @spec.name
@@ -113,11 +115,11 @@ module Pod
             next if spec.attributes_hash['vendored_frameworks'] && @spec.name != spec.name #过滤带有vendored_frameworks的
             next if spec.attributes_hash['ios.vendored_frameworks'] && @spec.name != spec.name #过滤带有vendored_frameworks的
             #获取没有制作二进制版本的spec集合
-            sources_sepc << spec
+            source_specs << spec
           end
 
           fail_build_specs = []
-          sources_sepc.uniq.each do |spec|
+          source_specs.uniq.each do |spec|
             begin
               builder = CBin::Build::Helper.new(spec,
                                                 @platform,
@@ -138,7 +140,7 @@ module Pod
               UI.warn "【#{spec.name} | #{spec.version}】组件二进制版本编译失败 ."
             end
           end
-          sources_sepc - fail_build_specs
+          source_specs - fail_build_specs
         end
 
         # 解析器传过来的
