@@ -38,6 +38,11 @@
 
 
 ### 更新
+
+- 2021-01-12
+  
+  v0.3.1.2 fix some bugs
+  
 - 2020-11-02
 
   v0.3.0.11 支持纯Swift、纯Object-C、Swift-OC混编
