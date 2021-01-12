@@ -1,6 +1,6 @@
 
 module CBin
-  VERSION = '0.3.0.12'
+  VERSION = '0.3.1.2'
 end
 
 module Pod
