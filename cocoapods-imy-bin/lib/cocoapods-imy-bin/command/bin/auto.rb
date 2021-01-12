@@ -54,10 +54,10 @@ module Pod
         def run
           @specification = Specification.from_file(@podspec)
 
-          sources_sepc = run_archive
+          source_specs = run_archive
 
           fail_push_specs = []
-          sources_sepc.uniq.each do |spec|
+          source_specs.uniq.each do |spec|
             begin
               fail_push_specs << spec unless CBin::Upload::Helper.new(spec,@code_dependencies,@sources).upload
             rescue  Object => exception
@@ -72,7 +72,7 @@ module Pod
             end
           end
 
-          success_specs = sources_sepc - fail_push_specs
+          success_specs = source_specs - fail_push_specs
           if success_specs.any?
             auto_success = ""
             success_specs.uniq.each do |spec|
@@ -126,8 +126,8 @@ module Pod
           
           archive = Pod::Command::Bin::Archive.new(CLAide::ARGV.new(argvs))
           archive.validate!
-          sources_sepc = archive.run
-          sources_sepc
+          source_specs = archive.run
+          source_specs
         end
 
 

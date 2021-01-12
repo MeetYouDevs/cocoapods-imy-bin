@@ -41,7 +41,7 @@
 
 - 2021-01-12
   
-  v0.3.1.2 fix some bugs
+  v0.3.1.3 fix some bugs
   
 - 2020-11-02
 
