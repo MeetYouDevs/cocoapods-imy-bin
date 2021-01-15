@@ -54,10 +54,10 @@ module Pod
         def run
           @specification = Specification.from_file(@podspec)
 
-          source_specs = run_archive
+          sources_sepc = run_archive
 
           fail_push_specs = []
-          source_specs.uniq.each do |spec|
+          sources_sepc.uniq.each do |spec|
             begin
               fail_push_specs << spec unless CBin::Upload::Helper.new(spec,@code_dependencies,@sources).upload
             rescue  Object => exception
@@ -72,7 +72,7 @@ module Pod
             end
           end
 
-          success_specs = source_specs - fail_push_specs
+          success_specs = sources_sepc - fail_push_specs
           if success_specs.any?
             auto_success = ""
             success_specs.uniq.each do |spec|
@@ -123,11 +123,11 @@ module Pod
             argvs += ["--env=#{@env}"]
           end
           argvs += ["--configuration=#{@config}"]
-          
+
           archive = Pod::Command::Bin::Archive.new(CLAide::ARGV.new(argvs))
           archive.validate!
-          source_specs = archive.run
-          source_specs
+          sources_sepc = archive.run
+          sources_sepc
         end
 
 
@@ -183,10 +183,10 @@ module Pod
             puts child
             if File.file?(child)
               if child.extname == '.podspec'
-                  name = File.basename(child)
-                  unless name.include?("binary-template")
-                    return name
-                  end
+                name = File.basename(child)
+                unless name.include?("binary-template")
+                  return name
+                end
               end
             end
           end

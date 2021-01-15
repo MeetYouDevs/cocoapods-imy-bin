@@ -4,6 +4,7 @@ require 'cocoapods-imy-bin/helpers/framework.rb'
 require 'English'
 require 'cocoapods-imy-bin/config/config_builder'
 require 'shellwords'
+require 'cocoapods-imy-bin/helpers/build_utils'
 
 module CBin
   class Framework
@@ -38,26 +39,54 @@ module CBin
       end
 
       def lipo_build(defines)
-        UI.section("Building static Library #{@spec}") do
-          # defines = compile
 
-          # build_sim_libraries(defines)
-          output = framework.versions_path + Pathname.new(@spec.name)
+        if CBin::Build::Utils.is_swift_module(@spec) || !CBin::Build::Utils.uses_frameworks?
+          UI.section("Building static Library #{@spec}") do
+            # defines = compile
 
-          build_static_library_for_ios(output)
+            # build_sim_libraries(defines)
+            output = framework.versions_path + Pathname.new(@spec.name)
 
-          copy_headers
-          copy_license
-          copy_resources
+            build_static_library_for_ios(output)
 
-          cp_to_source_dir
+            copy_headers
+            copy_license
+            copy_resources
+
+            cp_to_source_dir
+          end
+        else
+          # begin
+            UI.section("Building framework  #{@spec}") do
+              # defines = compile
+
+              # build_sim_libraries(defines)
+              output = framework.fwk_path + Pathname.new(@spec.name)
+
+              copy_static_framework_dir_for_ios
+
+              build_static_framework_machO_for_ios(output)
+
+              # copy_license
+              copy_framework_resources
+
+              #cp_to_source_dir#
+
+            # rescue Object => exception
+            #   UI.puts exception
+            # end
+          end
         end
+
         framework
       end
 
       private
 
       def cp_to_source_dir
+        # 删除Versions 软链接
+        framework.remove_current_version if CBin::Build::Utils.is_swift_module(@spec)
+
         framework_name = "#{@spec.name}.framework"
         target_dir = File.join(CBin::Config::Builder.instance.zip_dir,framework_name)
         FileUtils.rm_rf(target_dir) if File.exist?(target_dir)
@@ -92,33 +121,21 @@ module CBin
       def build_static_library_for_ios(output)
         UI.message "Building ios libraries with archs #{ios_architectures}"
         static_libs = static_libs_in_sandbox('build') + static_libs_in_sandbox('build-simulator') + @vendored_libraries
-        # if is_debug_model
-          ios_architectures.map do |arch|
-            static_libs += static_libs_in_sandbox("build-#{arch}") + @vendored_libraries
-          end
-          ios_architectures_sim do |arch|
-            static_libs += static_libs_in_sandbox("build-#{arch}") + @vendored_libraries
-          end
-        # end
+
+        ios_architectures.map do |arch|
+          static_libs += static_libs_in_sandbox("build-#{arch}") + @vendored_libraries
+        end
+        ios_architectures_sim do |arch|
+          static_libs += static_libs_in_sandbox("build-#{arch}") + @vendored_libraries
+        end
 
         build_path = Pathname("build")
         build_path.mkpath unless build_path.exist?
 
-        # if is_debug_model
-          libs = (ios_architectures + ios_architectures_sim) .map do |arch|
-            library = "build-#{arch}/lib#{target_name}.a"
-            library
-          end
-        # else
-        #   libs = ios_architectures.map do |arch|
-        #     library = "build/package-#{@spec.name}-#{arch}.a"
-        #     # libtool -arch_only arm64 -static -o build/package-armv64.a build/libIMYFoundation.a build-simulator/libIMYFoundation.a
-        #     # 从liBFoundation.a 文件中，提取出 arm64 架构的文件，命名为build/package-armv64.a
-        #     UI.message "libtool -arch_only #{arch} -static -o #{library} #{static_libs.join(' ')}"
-        #     `libtool -arch_only #{arch} -static -o #{library} #{static_libs.join(' ')}`
-        #     library
-        #   end
-        # end
+        libs = (ios_architectures + ios_architectures_sim) .map do |arch|
+          library = "build-#{arch}/lib#{@spec.name}.a"
+          library
+        end
 
         UI.message "lipo -create -output #{output} #{libs.join(' ')}"
         `lipo -create -output #{output} #{libs.join(' ')}`
@@ -182,11 +199,11 @@ module CBin
       def target_name
         #区分多平台，如配置了多平台，会带上平台的名字
         # 如libwebp-iOS
-        if @spec.available_platforms.count > 1
-          "#{@spec.name}-#{Platform.string_name(@spec.consumer(@platform).platform_name)}"
-        else
-          @spec.name
-        end
+         if @spec.available_platforms.count > 1
+           "#{@spec.name}-#{Platform.string_name(@spec.consumer(@platform).platform_name)}"
+         else
+            @spec.name
+         end
       end
 
       def xcodebuild(defines = '', args = '', build_dir = 'build', build_model = 'Debug')
@@ -244,10 +261,10 @@ module CBin
           if Pathname(module_map_file).exist?
             module_map = File.read(module_map_file)
           end
-        elsif public_headers.map(&:basename).map(&:to_s).include?("#{@spec.name}.h")
+        elsif public_headers.map(&:basename).map(&:to_s).include?("#{@spec.name}-umbrella.h")
           module_map = <<-MAP
           framework module #{@spec.name} {
-            umbrella header "#{@spec.name}.h"
+            umbrella header "#{@spec.name}-umbrella.h"
 
             export *
             module * { export * }
@@ -261,7 +278,27 @@ module CBin
             framework.module_map_path.mkpath
           end
           File.write("#{framework.module_map_path}/module.modulemap", module_map)
+
+          # unless framework.swift_module_path.exist?
+          #   framework.swift_module_path.mkpath
+          # end
+          # todo 所有架构的swiftModule拷贝到 framework.swift_module_path
+          archs = ios_architectures + ios_architectures_sim
+          archs.map do |arch|
+            swift_module = "build-#{arch}/#{@spec.name}.swiftmodule"
+            if File.directory?(swift_module)
+              FileUtils.cp_r("#{swift_module}/.", framework.swift_module_path)
+            end
+          end
+          swift_Compatibility_Header = "build-#{archs.first}/Swift\ Compatibility\ Header/#{@spec.name}-Swift.h"
+          FileUtils.cp(swift_Compatibility_Header,framework.headers_path) if File.exist?(swift_Compatibility_Header)
+          info_plist_file = File.join(File.dirname(__FILE__),"info.plist")
+          FileUtils.cp(info_plist_file,framework.fwk_path)
         end
+      end
+
+      def copy_swift_header
+
       end
 
       def copy_license
@@ -295,7 +332,7 @@ module CBin
           bundle_files = bundles.join(' ')
           `cp -rp #{bundle_files} #{framework.resources_path} 2>&1`
         end
-        
+
         real_source_dir = @source_dir
         unless @isRootSpec
           spec_source_dir = File.join(Dir.pwd,"#{@spec.name}")
@@ -304,8 +341,10 @@ module CBin
           end
           raise "copy_resources #{spec_source_dir} no exist " unless File.exist?(spec_source_dir)
 
+          spec_source_dir = File.join(Dir.pwd,"#{@spec.name}")
           real_source_dir = spec_source_dir
         end
+
         resources = [@spec, *@spec.recursive_subspecs].flat_map do |spec|
           expand_paths(real_source_dir, spec.consumer(@platform).resources)
         end.compact.uniq
@@ -331,6 +370,65 @@ module CBin
           Dir.glob(File.join(source_dir, path_spec))
         end
       end
+
+      #---------------------------------swift--------------------------------------#
+      #   lipo -create .a
+      def build_static_framework_machO_for_ios(output)
+        UI.message "Building ios framework with archs #{ios_architectures}"
+
+        static_libs = static_libs_in_sandbox('build') + @vendored_libraries
+        ios_architectures.map do |arch|
+          static_libs += static_libs_in_sandbox("build-#{arch}") + @vendored_libraries
+        end
+
+        ios_architectures_sim do |arch|
+          static_libs += static_libs_in_sandbox("build-#{arch}") + @vendored_libraries
+        end
+
+        build_path = Pathname("build")
+        build_path.mkpath unless build_path.exist?
+
+        libs = (ios_architectures + ios_architectures_sim) .map do |arch|
+          library = "build-#{arch}/#{@spec.name}.framework/#{@spec.name}"
+          library
+        end
+
+        UI.message "lipo -create -output #{output} #{libs.join(' ')}"
+        `lipo -create -output #{output} #{libs.join(' ')}`
+      end
+
+      def copy_static_framework_dir_for_ios
+
+        archs = ios_architectures + ios_architectures_sim
+        framework_dir = "build-#{ios_architectures_sim.first}/#{@spec.name}.framework"
+        framework_dir = "build-#{ios_architectures.first}/#{@spec.name}.framework" unless File.exist?(framework_dir)
+        unless File.exist?(framework_dir)
+          raise "#{framework_dir} path no exist"
+        end
+        File.join(Dir.pwd, "build-#{ios_architectures_sim.first}/#{@spec.name}.framework")
+        FileUtils.cp_r(framework_dir, framework.root_path)
+
+        # todo 所有架构的swiftModule拷贝到 framework.swift_module_path
+        archs.map do |arch|
+          swift_module = "build-#{arch}/#{@spec.name}.framework/Modules/#{@spec.name}.swiftmodule"
+          if File.directory?(swift_module)
+            FileUtils.cp_r("#{swift_module}/.", framework.swift_module_path)
+          end
+        end
+
+        # 删除Versions 软链接
+        framework.remove_current_version
+      end
+
+      def copy_framework_resources
+        resources = Dir.glob("#{framework.fwk_path + Pathname.new('Resources')}/*")
+        if resources.count == 0
+          framework.delete_resources
+        end
+      end
+
+
+      #---------------------------------getter and setter--------------------------------------#
 
       def framework
         @framework ||= begin
