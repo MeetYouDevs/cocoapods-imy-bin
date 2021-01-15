@@ -35,7 +35,7 @@ module Pod
             plugin(*[name, options].compact)
           end
 
-          use_frameworks!(generator.configuration.use_frameworks?)
+          use_frameworks!(generator.use_frameworks_value)
 
           if (supported_swift_versions = generator.supported_swift_versions)
             supports_swift_versions(supported_swift_versions)
