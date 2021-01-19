@@ -9,7 +9,7 @@ module CBin
   class Framework
     class Builder
       include Pod
-#Debug下还待完成
+      #Debug下还待完成
       def initialize(spec, file_accessor, platform, source_dir, isRootSpec = true, build_model="Debug")
         @spec = spec
         @source_dir = source_dir
@@ -93,22 +93,22 @@ module CBin
         UI.message "Building ios libraries with archs #{ios_architectures}"
         static_libs = static_libs_in_sandbox('build') + static_libs_in_sandbox('build-simulator') + @vendored_libraries
         # if is_debug_model
-          ios_architectures.map do |arch|
-            static_libs += static_libs_in_sandbox("build-#{arch}") + @vendored_libraries
-          end
-          ios_architectures_sim do |arch|
-            static_libs += static_libs_in_sandbox("build-#{arch}") + @vendored_libraries
-          end
+        ios_architectures.map do |arch|
+          static_libs += static_libs_in_sandbox("build-#{arch}") + @vendored_libraries
+        end
+        ios_architectures_sim do |arch|
+          static_libs += static_libs_in_sandbox("build-#{arch}") + @vendored_libraries
+        end
         # end
 
         build_path = Pathname("build")
         build_path.mkpath unless build_path.exist?
 
         # if is_debug_model
-          libs = (ios_architectures + ios_architectures_sim) .map do |arch|
-            library = "build-#{arch}/lib#{@spec.name}.a"
-            library
-          end
+        libs = (ios_architectures + ios_architectures_sim) .map do |arch|
+          library = "build-#{arch}/lib#{@spec.name}.a"
+          library
+        end
         # else
         #   libs = ios_architectures.map do |arch|
         #     library = "build/package-#{@spec.name}-#{arch}.a"
@@ -163,13 +163,13 @@ module CBin
 
         options = ios_build_options
         # if is_debug_model
-          archs = ios_architectures
-          # archs = %w[arm64 armv7 armv7s]
-          archs.map do |arch|
-            xcodebuild(defines, "ARCHS=\'#{arch}\' OTHER_CFLAGS=\'-fembed-bitcode -Qunused-arguments\'","build-#{arch}",@build_model)
-          end
+        archs = ios_architectures
+        # archs = %w[arm64 armv7 armv7s]
+        archs.map do |arch|
+          xcodebuild(defines, "ARCHS=\'#{arch}\' OTHER_CFLAGS=\'-fembed-bitcode -Qunused-arguments\'","build-#{arch}",@build_model)
+        end
         # else
-          # xcodebuild(defines,options)
+        # xcodebuild(defines,options)
         # end
 
         defines
@@ -253,8 +253,8 @@ module CBin
           MAP
         else
           # by ChildhoodAndy
-          # try to read modulemap file from public header
-          module_map_file = File.join(spec_header_dir, "#{@spec.name}.modulemap")
+          # try to read modulemap file from module dir
+          module_map_file = File.join(CBin::Build::Utils.spec_module_dir(@spec), "#{@spec.name}.modulemap")
           if Pathname(module_map_file).exist?
             module_map = File.read(module_map_file)
           end
@@ -285,9 +285,9 @@ module CBin
         bundle_names = [@spec, *@spec.recursive_subspecs].flat_map do |spec|
           consumer = spec.consumer(@platform)
           consumer.resource_bundles.keys +
-              consumer.resources.map do |r|
-                File.basename(r, '.bundle') if File.extname(r) == 'bundle'
-              end
+            consumer.resources.map do |r|
+              File.basename(r, '.bundle') if File.extname(r) == 'bundle'
+            end
         end.compact.uniq
 
         bundles.select! do |bundle|
@@ -300,7 +300,7 @@ module CBin
           bundle_files = bundles.join(' ')
           `cp -rp #{bundle_files} #{framework.resources_path} 2>&1`
         end
-        
+
         real_source_dir = @source_dir
         unless @isRootSpec
           spec_source_dir = File.join(Dir.pwd,"#{@spec.name}")
@@ -339,10 +339,10 @@ module CBin
 
       def framework
         @framework ||= begin
-          framework = Framework.new(@spec.name, @platform.name.to_s)
-          framework.make
-          framework
-        end
+                         framework = Framework.new(@spec.name, @platform.name.to_s)
+                         framework.make
+                         framework
+                       end
       end
 
 
