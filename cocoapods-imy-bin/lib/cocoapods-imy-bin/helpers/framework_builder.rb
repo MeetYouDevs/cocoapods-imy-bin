@@ -106,7 +106,7 @@ module CBin
 
         # if is_debug_model
           libs = (ios_architectures + ios_architectures_sim) .map do |arch|
-            library = "build-#{arch}/lib#{target_name}.a"
+            library = "build-#{arch}/lib#{@spec.name}.a"
             library
           end
         # else
