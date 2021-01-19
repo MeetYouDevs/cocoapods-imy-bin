@@ -38,6 +38,11 @@ module CBin
         if spec.module_name.nil?
           module_dir = "./Headers/Public/#{spec.name}"
           module_dir = "./Pods/Headers/Public/#{spec.name}" unless File.exist?(module_dir)
+          unless File.exist?(module_dir)
+            # 一些库名称中使用了中划线如AAA-BBB，public header中库名称会默认处理成下划线AAA_BBB
+            module_name = spec.name.gsub("-", "_")
+            module_dir = "./Pods/Headers/Public/#{module_name}"
+          end
         else
           module_dir = "./Headers/Public/#{spec.module_name}"
           module_dir = "./Pods/Headers/Public/#{spec.module_name}" unless File.exist?(module_dir)
