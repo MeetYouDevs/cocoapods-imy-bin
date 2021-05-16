@@ -85,10 +85,6 @@ module CBin
         spec_hash.delete('resource_bundles')
         spec_hash.delete('exclude_files')
         spec_hash.delete('preserve_paths')
-
-        spec_hash.delete('subspecs')
-        spec_hash.delete('default_subspecs')
-        spec_hash.delete('default_subspec')
         spec_hash.delete('vendored_frameworks')
         spec_hash.delete('vendored_framework')
 
@@ -124,6 +120,16 @@ module CBin
          「   converted automatically by plugin cocoapods-imy-bin @厦门美柚 - slj    」
           #{@spec.description}
         EOF
+
+        # 处理一下 subspecs ，使用相同的配置
+        if @spec.subspecs
+          @spec.subspecs.each do |subspec|
+            subspec.source_files = binary_source_files
+            subspec.public_header_files = binary_public_header_files
+            subspec.vendored_libraries = binary_vendored_libraries
+            subspec.resources = binary_resources if @spec.attributes_hash.keys.include?("resources")
+          end
+        end
         @spec
       end
 
