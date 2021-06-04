@@ -221,7 +221,7 @@ module CBin
         raise "copy_headers #{spec_header_dir} no exist " unless File.exist?(spec_header_dir)
 
         Dir.chdir(spec_header_dir) do
-          headers = Dir.glob('*.h')
+          headers = Dir.glob('**/*.h')
           headers.each do |h|
             public_headers << Pathname.new(File.join(Dir.pwd,h))
           end
