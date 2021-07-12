@@ -64,6 +64,9 @@
 
 [美团 iOS 工程 zsource 命令背后的那些事儿](https://tech.meituan.com/2019/08/08/the-things-behind-the-ios-project-zsource-command.html)
 
-#### 您有什么更好的想法，可以提出来，我们一起来实现，共创一个强大的工具平台，同时也欢迎给我们提PR。 
+---
+美柚急缺大量各类人才，欢迎加入美柚大家庭。
+
+内推简历发送至邮箱： suliangjin@xiaoyouzi.com
 
 
