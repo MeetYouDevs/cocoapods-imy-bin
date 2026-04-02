@@ -99,6 +99,7 @@ module Pod
         use_source_pods = podfile.use_source_pods
 
         missing_binary_specs = []
+        missing_source_specs = Hash.new { |hash, key| hash[key] = [] }
         specs_by_target.each do |target, rspecs|
           # use_binaries 并且 use_source_pods 不包含  本地可过滤
           use_binary_rspecs = if podfile.use_binaries? || podfile.use_binaries_selector
@@ -126,13 +127,15 @@ module Pod
             source = use_binary ? sources_manager.binary_source : sources_manager.code_source
 
             spec_version = rspec.spec.version
-            UI.message 'cocoapods-imy-bin 插件'
-            UI.message "- 开始处理 #{rspec.spec.name} #{spec_version} 组件."
+
+            unless source
+              missing_source_specs[use_binary ? '二进制' : '源码'] << "#{rspec.root.name} #{spec_version}"
+              next rspec
+            end
 
             begin
               # 从新 source 中获取 spec,在bin archive中会异常，因为找不到
               specification = source.specification(rspec.root.name, spec_version)
-              UI.message "#{rspec.root.name} #{spec_version} \r\n specification =#{specification} "
               # 组件是 subspec
               if rspec.spec.subspec?
                 specification = specification.subspec_by_name(rspec.name, false, true)
@@ -154,7 +157,6 @@ module Pod
                         else
                           ResolverSpecification.new(specification, used_by_only, source)
                         end
-                UI.message "组装新的 rspec ，替换原 rspec #{rspec.root.name} #{spec_version} \r\n specification =#{specification} \r\n #{rspec} "
 
               end
 
@@ -168,6 +170,12 @@ module Pod
 
             rspec
           end.compact
+        end
+
+        missing_source_specs.each do |source_type, specs|
+          next if specs.empty?
+
+          UI.warn "以下组件未配置#{source_type}私有源，跳过 source 切换：#{specs.uniq.join('、')}"
         end
 
         if missing_binary_specs.any?
@@ -184,12 +192,17 @@ module Pod
           missing_binary_specs.uniq.each do |spec|
             next if spec.name.include?('/')
 
-            spec_git_res = false
-            CBin::Config::Builder.instance.ignore_git_list.each do |ignore_git|
-              spec_git_res = spec.source[:git] && spec.source[:git].include?(ignore_git)
-              break if spec_git_res
+            ignore_git_list = CBin::Config::Builder.instance.ignore_git_list
+            if ignore_git_list
+              spec_git_res = false
+              #这里会过滤 ignore_git 配置中的 仓库
+              ignore_git_list.each do |ignore_git|
+                spec_git_res = spec.source[:git] && spec.source[:git].include?(ignore_git)
+                break if spec_git_res
+              end
+              next if spec_git_res
             end
-            next if spec_git_res
+
 
             #获取没有制作二进制版本的spec集合
             sources_sepc << spec

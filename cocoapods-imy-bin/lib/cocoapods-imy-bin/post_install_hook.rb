@@ -45,10 +45,11 @@ module Pod
   class Installer
     class PostInstallHooksContext
       attr_accessor :aggregate_targets
-      def self.generate(sandbox, pods_project, pod_target_subprojects, aggregate_targets)
-        context = super
+
+      def self.generate(*args)
+        context = super(*args)
         UI.info "[#] generate method of post install hook context override"
-        context.aggregate_targets = aggregate_targets
+        context.aggregate_targets = args.last
         context
       end
     end

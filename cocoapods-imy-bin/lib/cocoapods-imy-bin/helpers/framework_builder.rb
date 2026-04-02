@@ -10,7 +10,7 @@ module CBin
   class Framework
     class Builder
       include Pod
-      #Debug下还待完成
+#Debug下还待完成
       def initialize(spec, file_accessor, platform, source_dir, isRootSpec = true, build_model="Debug")
         @spec = spec
         @source_dir = source_dir
@@ -120,49 +120,22 @@ module CBin
 
       def build_static_library_for_ios(output)
         UI.message "Building ios libraries with archs #{ios_architectures}"
-        puts "Building ios libraries with archs #{ios_architectures}"
         static_libs = static_libs_in_sandbox('build') + static_libs_in_sandbox('build-simulator') + @vendored_libraries
-<<<<<<< HEAD
 
-=======
-        # if is_debug_model
->>>>>>> d96eb6e6e52e2b69308941e2de4831e0ffa542e4
         ios_architectures.map do |arch|
           static_libs += static_libs_in_sandbox("build-#{arch}") + @vendored_libraries
         end
         ios_architectures_sim do |arch|
           static_libs += static_libs_in_sandbox("build-#{arch}") + @vendored_libraries
         end
-<<<<<<< HEAD
-=======
-        # end
->>>>>>> d96eb6e6e52e2b69308941e2de4831e0ffa542e4
 
         build_path = Pathname("build")
         build_path.mkpath unless build_path.exist?
 
-<<<<<<< HEAD
         libs = (ios_architectures + ios_architectures_sim) .map do |arch|
           library = "build-#{arch}/lib#{@spec.name}.a"
           library
         end
-=======
-        # if is_debug_model
-        libs = (ios_architectures + ios_architectures_sim) .map do |arch|
-          library = "build-#{arch}/#{@spec.name}.framework/#{@spec.name}"
-          library
-        end
-        # else
-        #   libs = ios_architectures.map do |arch|
-        #     library = "build/package-#{@spec.name}-#{arch}.a"
-        #     # libtool -arch_only arm64 -static -o build/package-armv64.a build/libIMYFoundation.a build-simulator/libIMYFoundation.a
-        #     # 从liBFoundation.a 文件中，提取出 arm64 架构的文件，命名为build/package-armv64.a
-        #     UI.message "libtool -arch_only #{arch} -static -o #{library} #{static_libs.join(' ')}"
-        #     `libtool -arch_only #{arch} -static -o #{library} #{static_libs.join(' ')}`
-        #     library
-        #   end
-        # end
->>>>>>> d96eb6e6e52e2b69308941e2de4831e0ffa542e4
 
         UI.message "lipo -create -output #{output} #{libs.join(' ')}"
         `lipo -create -output #{output} #{libs.join(' ')}`
@@ -185,7 +158,7 @@ module CBin
         #   iphone5,iphone5s以下的模拟器
         # >x86_64
         #   iphone6以上的模拟器
-        archs = %w[arm64]
+        archs = %w[arm64 armv7]
         # archs = %w[x86_64 arm64 armv7s i386]
         # @vendored_libraries.each do |library|
         #   archs = `lipo -info #{library}`.split & archs
@@ -207,13 +180,13 @@ module CBin
 
         options = ios_build_options
         # if is_debug_model
-        archs = ios_architectures
-        # archs = %w[arm64 armv7 armv7s]
-        archs.map do |arch|
-          xcodebuild(defines, "ARCHS=\'#{arch}\' OTHER_CFLAGS=\'-fembed-bitcode -Qunused-arguments\'","build-#{arch}",@build_model)
-        end
+          archs = ios_architectures
+          # archs = %w[arm64 armv7 armv7s]
+          archs.map do |arch|
+            xcodebuild(defines, "ARCHS=\'#{arch}\' OTHER_CFLAGS=\'-fembed-bitcode -Qunused-arguments\'","build-#{arch}",@build_model)
+          end
         # else
-        # xcodebuild(defines,options)
+          # xcodebuild(defines,options)
         # end
 
         defines
@@ -261,9 +234,11 @@ module CBin
 
         #by slj 如果没有头文件，去 "Headers/Public"拿
         # if public_headers.empty?
-        spec_header_dir = CBin::Build::Utils.spec_header_dir(@spec)
+        spec_header_dir = "./Headers/Public/#{@spec.name}"
+        unless File.exist?(spec_header_dir)
+          spec_header_dir = "./Pods/Headers/Public/#{@spec.name}"
+        end
         raise "copy_headers #{spec_header_dir} no exist " unless File.exist?(spec_header_dir)
-
         Dir.chdir(spec_header_dir) do
           headers = Dir.glob('**/*.h')
           headers.each do |h|
@@ -295,13 +270,6 @@ module CBin
             module * { export * }
           }
           MAP
-        else
-          # by ChildhoodAndy
-          # try to read modulemap file from module dir
-          module_map_file = File.join(CBin::Build::Utils.spec_module_dir(@spec), "#{@spec.name}.modulemap")
-          if Pathname(module_map_file).exist?
-            module_map = File.read(module_map_file)
-          end
         end
 
         unless module_map.nil?
@@ -349,9 +317,9 @@ module CBin
         bundle_names = [@spec, *@spec.recursive_subspecs].flat_map do |spec|
           consumer = spec.consumer(@platform)
           consumer.resource_bundles.keys +
-            consumer.resources.map do |r|
-              File.basename(r, '.bundle') if File.extname(r) == 'bundle'
-            end
+              consumer.resources.map do |r|
+                File.basename(r, '.bundle') if File.extname(r) == 'bundle'
+              end
         end.compact.uniq
 
         bundles.select! do |bundle|
@@ -464,10 +432,10 @@ module CBin
 
       def framework
         @framework ||= begin
-                         framework = Framework.new(@spec.name, @platform.name.to_s)
-                         framework.make
-                         framework
-                       end
+          framework = Framework.new(@spec.name, @platform.name.to_s)
+          framework.make
+          framework
+        end
       end
 
 

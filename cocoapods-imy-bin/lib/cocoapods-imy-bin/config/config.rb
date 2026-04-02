@@ -2,12 +2,16 @@ require 'yaml'
 require 'cocoapods-imy-bin/native/podfile'
 require 'cocoapods-imy-bin/native/podfile_env'
 require 'cocoapods/generate'
-
-# 新增如下一行代码，解决在 pod bin init 初始化提示 Config 错误的问题。
 require 'ostruct'
 
 module CBin
   class Config
+    @missing_config_warnings = {}
+
+    class << self
+      attr_reader :missing_config_warnings
+    end
+
     def config_file
       config_file_with_configuration_env(configuration_env)
     end
@@ -27,12 +31,9 @@ module CBin
       file = config_dev_file
       if configuration_env == "release_iphoneos"
         file = config_release_iphoneos_file
-        puts "\n======  #{configuration_env} 环境 ========"
       elsif configuration_env == "debug_iphoneos"
         file = config_debug_iphoneos_file
-        puts "\n======  #{configuration_env} 环境 ========"
       elsif configuration_env == "dev"
-        puts "\n======  #{configuration_env} 环境 ========"
       else
         raise "\n=====  #{configuration_env} 参数有误，请检查%w[dev debug_iphoneos release_iphoneos]===="
       end
@@ -56,6 +57,14 @@ module CBin
     def binary_upload_url
       cut_string = "/%s/%s/zip"
       binary_download_url[0,binary_download_url.length - cut_string.length]
+    end
+
+    #清除接口 http://ci.meiyou.im:10240/frameworks_del
+    def delete_binary_url
+      cut_string = "/%s/%s/zip"
+      url = binary_download_url[0,binary_download_url.length - cut_string.length]
+      url += "_del"
+      url
     end
 
     def set_configuration_env(env)
@@ -91,7 +100,7 @@ module CBin
       if File.exist?(config_file)
         YAML.load_file(config_file)
       else
-        default_config
+        {}
       end
     end
 
@@ -125,10 +134,19 @@ module CBin
       if config.respond_to?(method)
         config.send(method, *args)
       elsif template_hash.keys.include?(method.to_s)
-        raise Pod::Informative, "#{method} 字段必须在配置文件 #{config_file} 中设置, 请执行 init 命令配置或手动修改配置文件".red
+        warn_missing_config_once(method)
+        nil
       else
         super
       end
+    end
+
+    def warn_missing_config_once(method)
+      warning_key = "#{config_file}:#{method}"
+      return if self.class.missing_config_warnings[warning_key]
+
+      self.class.missing_config_warnings[warning_key] = true
+      Pod::UI.warn "#{config_file} 不存在或未配置 #{method}，跳过读取该配置，请执行 init 命令配置或手动创建配置文件。"
     end
   end
 

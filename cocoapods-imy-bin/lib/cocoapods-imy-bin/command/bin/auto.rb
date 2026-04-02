@@ -52,17 +52,14 @@ module Pod
         end
 
         def run
+          unless @podspec
+            raise Informative, "未找到 podspec文件"
+          end
           @specification = Specification.from_file(@podspec)
-
-          sources_sepc = run_archive
+          source_specs = run_archive
 
           fail_push_specs = []
-<<<<<<< HEAD
-          sources_sepc.uniq.each do |spec|
-=======
-          UI.puts "pod bin auto run"
           source_specs.uniq.each do |spec|
->>>>>>> d96eb6e6e52e2b69308941e2de4831e0ffa542e4
             begin
               fail_push_specs << spec unless CBin::Upload::Helper.new(spec,@code_dependencies,@sources).upload
             rescue  Object => exception
@@ -77,15 +74,13 @@ module Pod
             end
           end
 
-          success_specs = sources_sepc - fail_push_specs
+          success_specs = source_specs - fail_push_specs
           if success_specs.any?
             auto_success = ""
             success_specs.uniq.each do |spec|
               auto_success += "#{spec.name} | #{spec.version}\n"
               UI.warn "===【 #{spec.name} | #{spec.version} 】二进制组件制作完成 ！！！ "
             end
-            puts "==============  auto_success"
-            puts auto_success
             ENV['auto_success'] = auto_success
           end
           #pod repo update
@@ -128,11 +123,11 @@ module Pod
             argvs += ["--env=#{@env}"]
           end
           argvs += ["--configuration=#{@config}"]
-
+          
           archive = Pod::Command::Bin::Archive.new(CLAide::ARGV.new(argvs))
           archive.validate!
-          sources_sepc = archive.run
-          sources_sepc
+          source_specs = archive.run
+          source_specs
         end
 
 
@@ -188,10 +183,10 @@ module Pod
             puts child
             if File.file?(child)
               if child.extname == '.podspec'
-                name = File.basename(child)
-                unless name.include?("binary-template")
-                  return name
-                end
+                  name = File.basename(child)
+                  unless name.include?("binary-template")
+                    return name
+                  end
               end
             end
           end

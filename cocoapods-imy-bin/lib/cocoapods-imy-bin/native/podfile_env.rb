@@ -3,6 +3,7 @@
 module Pod
   class Podfile
     USE_BINARIES = 'use_binaries'
+    USE_HMAP = 'use_hmap'
     USE_SOURCE_PODS = 'use_source_pods'
     USE_BINARIES_SELECTOR = 'use_binaries_selector'
     ALLOW_PRERELEASE = 'allow_prerelease'
@@ -20,6 +21,10 @@ module Pod
 
       def execute_with_use_binaries(use_binaries, &block)
         execute_with_key(USE_BINARIES, -> { use_binaries ? 'true' : 'false' }, &block)
+      end
+
+      def execute_with_use_hmap(use_hmap, &block)
+        execute_with_key(USE_HMAP, -> { use_hmap ? 'true' : 'false' }, &block)
       end
 
       def execute_with_key(key, value_returner)

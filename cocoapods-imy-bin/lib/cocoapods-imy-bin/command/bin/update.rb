@@ -70,9 +70,17 @@ module Pod
                 local_post_install_callback = @post_install_callback
               end
             end
+            local_podfile_internal_hash = nil
+            local_podfile.instance_eval do
+              begin
+                local_podfile_internal_hash = internal_hash
+              end
+            end
+
 
             podfile.instance_eval do
               begin
+                internal_hash.merge!(local_podfile_internal_hash)
 
                 # podfile HASH_KEYS才有plugins字段，否则会被限制
                 if local_podfile.plugins.any?

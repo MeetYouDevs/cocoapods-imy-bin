@@ -4,26 +4,24 @@ require 'cocoapods/user_interface'
 
 Pod::HooksManager.register('cocoapods-imy-bin', :pre_install) do |_context, _|
   require 'cocoapods-imy-bin/native'
+  command = $ARGV[1].to_s
 
-  #pod bin update || install  不走这里
-  if $ARGV[1] = 'update' || $ARGV[1] != 'install'
+  next unless command == 'install'
 
-  else
-    # pod bin repo update 更新二进制私有源
-    Pod::Command::Bin::Repo::Update.new(CLAide::ARGV.new([])).run
+  # pod bin repo update 更新二进制私有源
+  Pod::Command::Bin::Repo::Update.new(CLAide::ARGV.new([])).run
 
-    # 有插件/本地库 且是dev环境下，默认进入源码白名单  过滤 archive命令
-    if _context.podfile.plugins.keys.include?('cocoapods-imy-bin') && _context.podfile.configuration_env == 'dev'
-      dependencies = _context.podfile.dependencies
-      dependencies.each do |d|
-        next unless d.respond_to?(:external_source) &&
-            d.external_source.is_a?(Hash) &&
-            !d.external_source[:path].nil? &&
-            $ARGV[1] != 'archive'
-        _context.podfile.set_use_source_pods d.name
-      end
-  end
+  # 有插件/本地库 且是dev环境下，默认进入源码白名单  过滤 archive命令
+  if _context.podfile.plugins.keys.include?('cocoapods-imy-bin') && _context.podfile.configuration_env == 'dev'
+    dependencies = _context.podfile.dependencies
+    dependencies.each do |d|
+      next unless d.respond_to?(:external_source) &&
+        d.external_source.is_a?(Hash) &&
+        !d.external_source[:path].nil? &&
+        command != 'archive'
 
+      _context.podfile.set_use_source_pods d.name
+    end
   end
 
   # 同步 BinPodfile 文件
@@ -45,22 +43,22 @@ Pod::HooksManager.register('cocoapods-imy-bin', :pre_install) do |_context, _|
 end
 
 Pod::HooksManager.register('cocoapods-imy-bin', :source_provider) do |context, _|
-  #pod bin update || install  不走这里
-  if $ARGV[1] == 'update' || $ARGV[1] != 'install'
+  command = $ARGV[1].to_s
+  next unless command == 'install'
 
-  else
-    sources_manager = Pod::Config.instance.sources_manager
-    podfile = Pod::Config.instance.podfile
+  sources_manager = Pod::Config.instance.sources_manager
+  podfile = Pod::Config.instance.podfile
 
-    if podfile
-      # 添加源码私有源 && 二进制私有源
-      added_sources = [sources_manager.code_source]
-      if podfile.use_binaries? || podfile.use_binaries_selector
-        added_sources << sources_manager.binary_source
-        added_sources.reverse!
-      end
-      added_sources.each { |source| context.add_source(source) }
+  if podfile
+    # 添加源码私有源 && 二进制私有源
+    added_sources = [sources_manager.code_source]
+    if podfile.use_binaries? || podfile.use_binaries_selector
+      added_sources << sources_manager.binary_source
+      added_sources.reverse!
     end
+    added_sources.compact!
+    added_sources.each { |source| context.add_source(source) }
   end
-
 end
+
+

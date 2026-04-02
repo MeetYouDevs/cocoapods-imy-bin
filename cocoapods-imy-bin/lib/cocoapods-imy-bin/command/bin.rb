@@ -4,9 +4,11 @@ require 'cocoapods-imy-bin/command/bin/init'
 require 'cocoapods-imy-bin/command/bin/archive'
 require 'cocoapods-imy-bin/command/bin/auto'
 require 'cocoapods-imy-bin/command/bin/code'
+require 'cocoapods-imy-bin/command/bin/local'
 require 'cocoapods-imy-bin/command/bin/update'
 require 'cocoapods-imy-bin/command/bin/install'
 require 'cocoapods-imy-bin/command/bin/imy'
+require 'cocoapods-imy-bin/command/bin/clean'
 
 require 'cocoapods-imy-bin/helpers'
 
@@ -34,6 +36,8 @@ module Pod
       include CBin::SpecFilesHelper
 
       self.abstract_command = true
+
+      self.default_subcommand = 'open'
       self.summary = '组件二进制化插件.'
       self.description = <<-DESC
         组件二进制化插件。利用源码私有源与二进制私有源实现对组件依赖类型的切换。

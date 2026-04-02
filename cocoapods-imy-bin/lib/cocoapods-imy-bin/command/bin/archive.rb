@@ -7,6 +7,7 @@ require 'cocoapods-imy-bin/helpers/build_helper'
 require 'cocoapods-imy-bin/helpers/spec_source_creator'
 require 'cocoapods-imy-bin/config/config_builder'
 require 'cocoapods-imy-bin/command/bin/lib/lint'
+require 'xcodeproj'
 
 module Pod
   class Command
@@ -69,6 +70,7 @@ module Pod
           @spec = Specification.from_file(spec_file)
           generate_project
 
+          swift_pods_buildsetting
           source_specs = Array.new
           source_specs.concat(build_root_spec)
           source_specs.concat(build_dependencies) if @all_make
@@ -156,22 +158,15 @@ module Pod
                 argvs = [
                   "--sources=#{sources_option(@code_dependencies, @sources)}",
                   "--gen-directory=#{CBin::Config::Builder.instance.gen_dir}",
-                  # '--clean',
+                  '--clean',
                   *@additional_args
                 ]
-
-                # 源码路径
-                source_dir = Pathname.pwd+@spec.name
-
-                # 打包路径（private/var/tmp/imy_release）路径，解决多个电脑源码调试的问题
-                gen_directory = "#{CBin::Config::Builder.instance.gen_dir}" + "/#{@spec.name}"
-                FileUtils.cp_r(source_dir, gen_directory)
 
                 podfile= File.join(Pathname.pwd, "Podfile")
                 if File.exist?(podfile)
                   argvs += ['--use-podfile']
                 end
-
+                
                 argvs << spec_file if spec_file
 
                 gen = Pod::Command::Gen.new(CLAide::ARGV.new(argvs))
@@ -181,6 +176,33 @@ module Pod
           end
         end
 
+        def swift_pods_buildsetting
+          # swift_project_link_header
+          worksppace_path = File.expand_path("#{CBin::Config::Builder.instance.gen_dir}/#{@spec.name}")
+          path = File.join(worksppace_path, "Pods.xcodeproj")
+          path = File.join(worksppace_path, "Pods/Pods.xcodeproj") unless File.exist?(path)
+          raise Informative,  "#{path} File no exist, please check" unless File.exist?(path)
+          project = Xcodeproj::Project.open(path)
+          project.build_configurations.each do |x|
+            x.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = true #设置生成swift inter
+          end
+          project.save
+        end
+
+        # def swift_project_link_header
+        #   worksppace_path = Pod::Config.instance.installation_root
+        #   Dir.chdir(worksppace_path) do
+        #     shell_script = <<-'SH'.strip_heredoc
+        #          ditto "${DERIVED_SOURCES_DIR}/${PRODUCT_MODULE_NAME}-Swift.h" "${CBin::Config::Builder.instance.gen_dir}"
+        #     SH
+        #     shell_script
+        #
+        #     # project = Xcodeproj::Project.open(Dir.glob('*.xcodeproj').first)
+        #     # project.build_configurations.each do |x|
+        #     #   x.build_settings['DERIVED_SOURCES_DIR']
+        #     # end
+        #   end
+        # end
 
         def spec_file
           @spec_file ||= begin
@@ -191,31 +213,12 @@ module Pod
                                raise Informative, '当前目录下没有找到可用源码 podspec.'
                              end
 
-                            #  spec_file = code_spec_files.first
-                            #  spec_file
-                            gen_file
+                             spec_file = code_spec_files.first
+                             spec_file
                            end
                          end
         end
 
-        def gen_file
-          spec_file = code_spec_files.first
-
-          # {CBin::Config::Builder.instance.gen_dir: /private/var/tmp/imy_release/HDStaticPod-build-temp/bin-archive
-          # 使用 split 方法分割字符串，并获取分割后的第一个部分
-          name = spec_file.to_path.split('.').first
-          # 打包路径（private/var/tmp/imy_release）路径，解决多个电脑源码调试的问题
-          gen_directory = "#{CBin::Config::Builder.instance.gen_dir}" + "/#{name}"
-          FileUtils.rm_rf(gen_directory) if File.exist?(gen_directory)
-          # 确保目标目录存在
-          FileUtils.mkdir_p(gen_directory)
-          # 复制目录及其内容
-          gen_directory = "#{gen_directory}" + "/#{spec_file}"
-          # 复制目录及其内容
-          FileUtils.cp_r(spec_file, gen_directory)
-
-          gen_directory
-        end
 
 
       end

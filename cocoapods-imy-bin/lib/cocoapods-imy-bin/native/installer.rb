@@ -97,21 +97,45 @@ module Pod
     alias old_write_lockfiles write_lockfiles
     def write_lockfiles
       old_write_lockfiles
-      if File.exist?('Podfile_local')
+      return unless File.exist?('Podfile_local')
 
-        project = Xcodeproj::Project.open(config.sandbox.project_path)
-        #获取主group
-        group = project.main_group
-        group.set_source_tree('SOURCE_ROOT')
-        #向group中添加 文件引用
-        file_ref = group.new_reference(config.sandbox.root + '../Podfile_local')
-        #podfile_local排序
-        podfile_local_group = group.children.last
-        group.children.pop
-        group.children.unshift(podfile_local_group)
-        #保存
-        project.save
+      podfile_local_path = Pathname.new(config.sandbox.root + '../Podfile_local').to_s
+      project = Xcodeproj::Project.open(config.sandbox.project_path)
+      group = project.main_group
+      group.set_source_tree('SOURCE_ROOT')
+
+      file_ref = group.children.find do |child|
+        child.respond_to?(:path) &&
+          (child.path == podfile_local_path || File.basename(child.path.to_s) == 'Podfile_local')
       end
+
+      project_changed = false
+      unless file_ref
+        file_ref = group.new_reference(podfile_local_path)
+        project_changed = true
+      end
+
+      desired_attrs = {
+        xc_language_specification_identifier: 'xcode.lang.ruby',
+        explicit_file_type: 'text.script.ruby',
+        last_known_file_type: 'text',
+        tab_width: '2',
+        indent_width: '2',
+      }
+      desired_attrs.each do |attr, value|
+        next if file_ref.send(attr) == value
+
+        file_ref.send("#{attr}=", value)
+        project_changed = true
+      end
+
+      if group.children.first != file_ref
+        group.children.delete(file_ref)
+        group.children.unshift(file_ref)
+        project_changed = true
+      end
+
+      project.save if project_changed
     end
   end
 

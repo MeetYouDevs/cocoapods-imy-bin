@@ -15,6 +15,9 @@ module Pod
       def use_binaries!(flag = true)
         set_internal_hash_value(USE_BINARIES, flag)
       end
+      def use_hmap!(flag = true)
+        set_internal_hash_value(USE_HMAP, flag)
+      end
 
       def use_binaries_with_spec_selector!(&block)
         raise Informative, '必须提供选择需要二进制组件的 block !' unless block_given?
@@ -59,6 +62,10 @@ module Pod
 
     def use_binaries?
       get_internal_hash_value(USE_BINARIES, false) || ENV[USE_BINARIES] == 'true'
+    end
+
+    def use_hmap?
+      get_internal_hash_value(USE_HMAP, false) || ENV[USE_HMAP] == 'true'
     end
 
     def use_source_pods

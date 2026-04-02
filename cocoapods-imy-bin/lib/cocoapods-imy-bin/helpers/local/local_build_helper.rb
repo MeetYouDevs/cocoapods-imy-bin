@@ -1,3 +1,5 @@
+
+
 # copy from https://github.com/CocoaPods/cocoapods-packager
 
 require 'cocoapods-imy-bin/native/podfile'
@@ -8,7 +10,7 @@ require 'cocoapods-imy-bin/helpers/library_builder'
 require 'cocoapods-imy-bin/config/config_builder'
 
 module CBin
-  class Build
+  class LocalBuild
     class Helper
       include Pod
 #class var
@@ -18,50 +20,50 @@ module CBin
                      platform,
                      framework_output,
                      zip,
-                     rootSpec,
-                     skip_archive = false,
-                     build_model="Release")
+                     clean,
+                     target_name,
+                     local_build_dir_name,
+                     local_build_dir)
         @spec = spec
+        @target_name = target_name
         @platform = platform
-        @build_model = build_model
-        @rootSpec = rootSpec
-        @isRootSpec = rootSpec.name == spec.name
-        @skip_archive = skip_archive
+
         @framework_output = framework_output
         @zip = zip
-
+        @local_build_dir_name = local_build_dir_name
+        @local_build_dir = local_build_dir
+        @clean = clean
         @framework_path
+        @is_library = !is_framework
       end
 
       def build
         UI.section("Building static framework #{@spec}") do
-
-          build_static_framework
-          unless @skip_archive
-            unless  CBin::Build::Utils.is_framework(@spec)
+          begin
+            build_static_framework
+            if @is_library
               build_static_library
+              zip_static_framework if @zip &&= @framework_output
               zip_static_library
             else
               zip_static_framework
             end
+
+            clean_workspace if @clean
+          rescue Exception => e
+            puts e.message
+            puts e.backtrace.inspect
+            return false
           end
-
         end
-
+        return true
       end
 
       def build_static_framework
-        source_dir = Dir.pwd
         file_accessor = Sandbox::FileAccessor.new(Pathname.new('.').expand_path, @spec.consumer(@platform))
         Dir.chdir(workspace_directory) do
-          builder = CBin::Framework::Builder.new(@spec, file_accessor, @platform, source_dir, @isRootSpec, @build_model )
-          @@build_defines = builder.build if @isRootSpec
-          begin
-            @framework_path = builder.lipo_build(@@build_defines) unless @skip_archive
-          rescue => e
-            UI.warn "#{@spec.name} 构建失败: #{e.message}"
-            @skip_archive = true
-          end
+          builder = CBin::LocalFramework::Builder.new(@spec, file_accessor, @platform, @local_build_dir_name,@local_build_dir, @is_library, frameWork_dir)
+          @framework_path = builder.create
         end
       end
 
@@ -69,21 +71,22 @@ module CBin
         source_dir = zip_dir
         file_accessor = Sandbox::FileAccessor.new(Pathname.new('.').expand_path, @spec.consumer(@platform))
         Dir.chdir(workspace_directory) do
-          builder = CBin::Library::Builder.new(@spec, file_accessor, @platform, source_dir,@framework_path)
+          builder = CBin::LocalLibrary::Builder.new(@spec, file_accessor, @platform, source_dir,@framework_path)
           builder.build
         end
       end
 
       def zip_static_framework
-        Dir.chdir(File.join(workspace_directory,@framework_path.root_path)) do
+        Dir.chdir(zip_dir) do
+          # output_name = "#{framework_name}.zip"
           output_name =  File.join(zip_dir, framework_name_zip)
           unless File.exist?(framework_name)
-            UI.puts "没有需要压缩的 framework 文件：#{framework_name}"
-            return
+            UI.warn "没有需要压缩的 framework 文件：#{framework_name}"
           end
 
           UI.puts "Compressing #{framework_name} into #{output_name}"
           `zip --symlinks -r #{output_name} #{framework_name}`
+
         end
       end
 
@@ -127,7 +130,7 @@ module CBin
       end
 
       def workspace_directory
-        File.expand_path("#{gen_name}/#{@rootSpec.name}")
+        @local_build_dir
       end
 
       def zip_dir
@@ -135,9 +138,30 @@ module CBin
       end
 
       def gen_name
-        CBin::Config::Builder.instance.gen_dir
+        CBin::Config::Builder.instance.gen_name
       end
 
+      def is_library
+        File.exist?(File.join(@local_build_dir, "lib#{@spec.name}.a"))
+      end
+
+      # 使用了user_framework 会有#{@spec.name}.framework
+      # 未使用的 需要判断文件
+      def is_framework
+        res = File.exist?(File.join(@local_build_dir, "#{@spec.name}.framework"))
+        unless res
+          res = File.exist?(File.join(CBin::Config::Builder.instance.xcode_BuildProductsPath_dir, "#{@spec.name}","Swift Compatibility Header"))
+        end
+        res
+      end
+
+      def frameWork_dir
+        dir = File.join(@local_build_dir, "#{@spec.name}.framework")
+        unless File.exist?(dir)
+          dir = File.join(CBin::Config::Builder.instance.xcode_BuildProductsPath_dir, "#{@spec.name}")
+        end
+        dir
+      end
 
       def spec_file
         @spec_file ||= begin
