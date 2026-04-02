@@ -57,6 +57,7 @@ module Pod
           source_specs = run_archive
 
           fail_push_specs = []
+          UI.puts "pod bin auto run"
           source_specs.uniq.each do |spec|
             begin
               fail_push_specs << spec unless CBin::Upload::Helper.new(spec,@code_dependencies,@sources).upload
@@ -123,7 +124,7 @@ module Pod
             argvs += ["--env=#{@env}"]
           end
           argvs += ["--configuration=#{@config}"]
-          
+
           archive = Pod::Command::Bin::Archive.new(CLAide::ARGV.new(argvs))
           archive.validate!
           source_specs = archive.run

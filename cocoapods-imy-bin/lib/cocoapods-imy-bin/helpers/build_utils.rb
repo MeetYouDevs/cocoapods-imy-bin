@@ -16,7 +16,7 @@ module CBin
 
       def Utils.spec_header_dir(spec)
 
-        header_dir = "./Headers/Public/#{spec.name}"
+        header_dir = "./build-arm64/#{spec.name}.framework/Headers"
         header_dir = "./Pods/Headers/Public/#{spec.name}" unless File.exist?(header_dir)
 
         unless File.exist?(header_dir)

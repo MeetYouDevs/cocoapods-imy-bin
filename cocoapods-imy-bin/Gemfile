@@ -1,4 +1,4 @@
-SKIP_UNRELEASED_VERSIONS = false
+SKIP_UNRELEASED_VERSIONS = true
 
 # Specify your gem's dependencies in cocoapods-imy-bin.gemspec
 
@@ -23,7 +23,7 @@ group :development do
   cp_gem 'xcodeproj',                'xcodeproj',path: 'Xcodeproj'
   cp_gem 'cocoapods-imy-bin',                'cocoapods-imy-bin',path: 'cocoapods-imy-bin'
 
-  gem 'cocoapods-generate', '1.6.0'
+  gem 'cocoapods-generate', '2.2.5'
   gem 'mocha'
   gem 'bacon'
   gem 'mocha-on-bacon'

@@ -117,7 +117,7 @@ module CBin
         @spec.vendored_libraries = binary_vendored_libraries
         @spec.resources = binary_resources if @spec.attributes_hash.keys.include?("resources")
         @spec.description = <<-EOF
-         「   converted automatically by plugin cocoapods-imy-bin @厦门美柚 - slj    」
+         「   converted automatically by plugin cocoapods-imy-bin  」
           #{@spec.description}
         EOF
 
@@ -183,7 +183,7 @@ module CBin
 
         @spec = Pod::Specification.from_hash(spec_hash)
         @spec.description = <<-EOF
-         「   converted automatically by plugin cocoapods-imy-bin @厦门美柚 - slj    」
+         「   converted automatically by plugin cocoapods-imy-bin  」
           #{@spec.description}
         EOF
         @spec

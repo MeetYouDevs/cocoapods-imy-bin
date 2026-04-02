@@ -58,7 +58,8 @@ module CBin
           @@build_defines = builder.build if @isRootSpec
           begin
             @framework_path = builder.lipo_build(@@build_defines) unless @skip_archive
-          rescue
+          rescue => e
+            puts "An error occurred: #{e.message}"
             @skip_archive = true
           end
         end

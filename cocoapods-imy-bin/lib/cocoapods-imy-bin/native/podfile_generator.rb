@@ -15,17 +15,21 @@ module Pod
     class PodfileGenerator
       # @return [Podfile] a podfile suitable for installing the given spec
       #
-      # @param  [Specification] spec
+      # @param  [Array<Specification>] specs
       #
-      alias old_podfile_for_spec podfile_for_spec
+      # cocoapods-generate (2.2.5)这个插件的版本，将
+      # podfile_for_spec 方法改名为 podfile_for_specs
+      alias old_podfile_for_specs podfile_for_specs
 
-      def podfile_for_spec(spec)
+      def podfile_for_specs(specs)
         generator = self
-        dir = configuration.gen_dir_for_pod(spec.name)
+        dir = configuration.gen_dir_for_specs(specs)
+        project_name = configuration.project_name_for_specs(specs)
+        external_source_pods = configuration.external_source_pods
 
         Pod::Podfile.new do
-          project "#{spec.name}.xcodeproj"
-          workspace "#{spec.name}.xcworkspace"
+          project "#{project_name}.xcodeproj"
+          workspace "#{project_name}.xcworkspace"
 
           plugin 'cocoapods-generate'
 
@@ -48,12 +52,17 @@ module Pod
 
           self.defined_in_file = dir.join('CocoaPods.podfile.yaml')
 
-          test_specs = spec.recursive_subspecs.select(&:test_specification?)
-          app_specs = if spec.respond_to?(:app_specification?)
-                        spec.recursive_subspecs.select(&:app_specification?)
-                      else
-                        []
-                      end
+          test_specs_by_spec = Hash[specs.map do |spec|
+            [spec, spec.recursive_subspecs.select(&:test_specification?)]
+          end]
+          app_specs_by_spec = Hash[specs.map do |spec|
+            app_specs = if spec.respond_to?(:app_specification?)
+                          spec.recursive_subspecs.select(&:app_specification?)
+                        else
+                          []
+                        end
+            [spec, app_specs]
+          end]
 
           # Stick all of the transitive dependencies in an abstract target.
           # This allows us to force CocoaPods to use the versions / sources / external sources
@@ -85,7 +94,7 @@ module Pod
 
           # Add platform-specific concrete targets that inherit the
           # `pod` declaration for the local pod.
-          spec_platform_names = spec.available_platforms.map(&:string_name).flatten.each.reject do |platform_name|
+          spec_platform_names = specs.flat_map { |s| s.available_platforms.map(&:string_name) }.uniq.each.reject do |platform_name|
             !generator.configuration.platforms.nil? && !generator.configuration.platforms.include?(platform_name.downcase)
           end
 
@@ -99,67 +108,74 @@ module Pod
           # and the local `pod` declaration
           # 会导致多个dependencies出现， 注释by slj
 
-
           inhibit_all_warnings! if generator.inhibit_all_warnings?
           use_modular_headers! if generator.use_modular_headers?
 
           # This is the pod declaration for the local pod,
           # it will be inherited by the concrete target definitions below
 
-          pod_options = generator.dependency_compilation_kwargs(spec.name)
-          pod_options[:path] = spec.defined_in_file.relative_path_from(dir).to_s
-          # generator.configuration.podfile.dependencies[0].external_source
+          specs.each do |spec|
+            # This is the pod declaration for the local pod,
+            # it will be inherited by the concrete target definitions below
+            pod_options = generator.dependency_compilation_kwargs(spec.name)
 
-
-          { testspecs: test_specs, appspecs: app_specs }.each do |key, specs|
-            pod_options[key] = specs.map { |s| s.name.sub(%r{^#{Regexp.escape spec.root.name}/}, '') }.sort unless specs.empty?
+            path = spec.defined_in_file.relative_path_from(dir).to_s
+            pod_options[:path] = path
+            { testspecs: test_specs_by_spec[spec], appspecs: app_specs_by_spec[spec] }.each do |key, subspecs|
+              pod_options[key] = subspecs.map { |s| s.name.sub(%r{^#{Regexp.escape spec.root.name}/}, '') }.sort unless subspecs.blank?
+            end
+            pod spec.name, **pod_options
           end
 
-          pod spec.name, **pod_options
+          specs.each do |spec|
 
-          if Pod::Config.instance.podfile
-            target_definitions['Pods'].instance_exec do
-              target_definition = nil
-              Pod::Config.instance.podfile.target_definition_list.each do |target|
-                if target.label == "Pods-#{spec.name}"
-                  target_definition = target
-                  break
-                end
-              end
-              # setting modular_headers_for
-              if(target_definition && target_definition.use_modular_headers_hash.values.any?)
-                target_definition.use_modular_headers_hash.values.each do |f|
-                  f.each { | pod_name|  self.set_use_modular_headers_for_pod(pod_name, true) }
-                end
-              end
-
-
-              if target_definition
-                value = target_definition.to_hash['dependencies']
-                next if value.blank?
-                #删除 本地库中的 spec.name，因为本地的./spec.name地址是错的
-                value.each do |f|
-                  if f.is_a?(Hash) && f.keys.first == spec.name
-                    value.delete f
+            if Pod::Config.instance.podfile
+              target_definitions['Pods'].instance_exec do
+                target_definition = nil
+                Pod::Config.instance.podfile.target_definition_list.each do |target|
+                  if target.label == "Pods-#{spec.name}"
+                    target_definition = target
                     break
                   end
                 end
-                old_value = self.to_hash['dependencies'].first
-                value << old_value unless (old_value == nil || value.include?(old_value))
+                # setting modular_headers_for
+                if(target_definition && target_definition.use_modular_headers_hash.values.any?)
+                  target_definition.use_modular_headers_hash.values.each do |f|
+                    f.each { | pod_name|  self.set_use_modular_headers_for_pod(pod_name, true) }
+                  end
+                end
 
-                set_hash_value(%w(dependencies).first, value)
 
-                value = target_definition.to_hash['configuration_pod_whitelist']
-                next if value.blank?
-                set_hash_value(%w(configuration_pod_whitelist).first, value)
+                if target_definition
+                  value = target_definition.to_hash['dependencies']
+                  next if value.blank?
+                  #删除 本地库中的 spec.name，因为本地的./spec.name地址是错的
+                  value.each do |f|
+                    if f.is_a?(Hash) && f.keys.first == spec.name
+                      value.delete f
+                      break
+                    end
+                  end
+                  old_value = self.to_hash['dependencies'].first
+                  value << old_value unless (old_value == nil || value.include?(old_value))
+
+                  set_hash_value(%w(dependencies).first, value)
+
+                  value = target_definition.to_hash['configuration_pod_whitelist']
+                  next if value.blank?
+                  set_hash_value(%w(configuration_pod_whitelist).first, value)
+
+
+                end
 
 
               end
-
 
             end
 
           end
+
+
 
           # if generator.configuration && generator.configuration.podfile
           #   #变量本地podfile下的dependencies 写入新的验证文件中，指定依赖源
@@ -196,4 +212,3 @@ module Pod
     end
   end
 end
-

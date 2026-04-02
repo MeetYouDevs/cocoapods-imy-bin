@@ -1,0 +1,22 @@
+{
+    // 使用 IntelliSense 了解相关属性。 
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "rdbg",
+            "name": "Debug current file with rdbg",
+            "request": "launch",
+            "script": "${workspaceFolder}/cocoapods-imy-bin/cocoapods-imy-bin-0.3.1.2",
+            "cwd": "/Users/denglibing3/HDProject/ITPlayground/Ruby/202407/CocoaPodsDemo/HDPods/HDStaticPod/HDStaticPod", // "program"的工作目录
+            "args": ["bin","auto"],
+            "askParameters": false
+        },
+        {
+            "type": "rdbg",
+            "name": "Attach with rdbg",
+            "request": "attach"
+        }
+    ]
+}

@@ -83,7 +83,8 @@ module Pod
           FileUtils.rm_rf(target_path)
 
           find_dependency = find_dependency(name)
-
+          # find_dependency.external_source = {:podspec => '/Users/denglibing3/.cocoapods/repos/erduoniba-hdpodrepo/HDStaticPod/0.1.0/HDStaticPod.podspec'}
+          # find_dependency.requirement.requirements.first[1].version
           spec = fetch_external_source(find_dependency, @config.podfile,@config.lockfile, @config.sandbox,true )
 
           download_request = Pod::Downloader::Request.new(:name => name, :spec => spec)
@@ -118,6 +119,10 @@ module Pod
         def link(lib_file,target_path,basename)
           dir = (`dwarfdump "#{lib_file}" | grep "AT_comp_dir" | head -1 | cut -d \\" -f2 `)
           sub_path = "#{basename}/bin-archive/#{basename}"
+
+          # 用于 pod bin code 源码调试，找到打包电脑上的编译代码的路径
+          # 需要去掉 Pods 这个路径
+          dir = dir.gsub("#{basename}/Pods", "").chomp
           dir = dir.gsub(sub_path, "").chomp
           # UI.puts "dir = #{dir}"
 
@@ -160,6 +165,9 @@ module Pod
         def get_lib_path(name)
           dir = Pathname.new(File.join(Pathname.pwd,"Pods",name))
           lib_name = "lib#{name}.a"
+          unless File.exist?(lib_name)
+            lib_name = "#{name}"
+          end
           lib_path = File.join(dir,lib_name)
 
           unless File.exist?(lib_path)

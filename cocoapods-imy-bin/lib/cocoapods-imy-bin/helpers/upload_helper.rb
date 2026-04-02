@@ -22,6 +22,7 @@ module CBin
       end
 
       def upload
+        puts "upload"
         Dir.chdir(CBin::Config::Builder.instance.root_dir) do
           # 创建binary-template.podsepc
           # 上传二进制文件
@@ -47,6 +48,7 @@ module CBin
       def curl_zip
         zip_file = "#{CBin::Config::Builder.instance.library_file(@spec)}.zip"
         res = File.exist?(zip_file)
+        puts "curl_zip #{zip_file} #{res}"
         unless res
           zip_file = CBin::Config::Builder.instance.framework_zip_file(@spec) + ".zip"
           res = File.exist?(zip_file)
