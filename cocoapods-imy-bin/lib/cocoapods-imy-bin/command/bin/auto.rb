@@ -57,7 +57,12 @@ module Pod
           sources_sepc = run_archive
 
           fail_push_specs = []
+<<<<<<< HEAD
           sources_sepc.uniq.each do |spec|
+=======
+          UI.puts "pod bin auto run"
+          source_specs.uniq.each do |spec|
+>>>>>>> d96eb6e6e52e2b69308941e2de4831e0ffa542e4
             begin
               fail_push_specs << spec unless CBin::Upload::Helper.new(spec,@code_dependencies,@sources).upload
             rescue  Object => exception

@@ -191,7 +191,11 @@ module CBin
         @root_dir ||= begin
                          basename = File.basename(Pod::Config.instance.installation_root)
                          parent_dir = File.dirname(Pod::Config.instance.installation_root)
-                         root_name = File.join(parent_dir,"#{basename}-build-temp")
+                         private_dir = '/private/var/tmp/imy_release/'
+                         unless File.exist?(private_dir)
+                          FileUtils.mkdir_p(private_dir)
+                         end
+                         root_name = File.join(private_dir,"#{basename}-build-temp")
                          Dir.mkdir(root_name) unless File.exist?root_name
                          Pathname.new(root_name)
                        end

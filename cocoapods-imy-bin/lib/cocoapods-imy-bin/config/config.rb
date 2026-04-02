@@ -3,6 +3,9 @@ require 'cocoapods-imy-bin/native/podfile'
 require 'cocoapods-imy-bin/native/podfile_env'
 require 'cocoapods/generate'
 
+# 新增如下一行代码，解决在 pod bin init 初始化提示 Config 错误的问题。
+require 'ostruct'
+
 module CBin
   class Config
     def config_file
