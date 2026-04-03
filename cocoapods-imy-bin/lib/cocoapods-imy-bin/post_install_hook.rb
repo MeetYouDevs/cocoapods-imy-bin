@@ -3,6 +3,7 @@ require 'cocoapods-imy-bin/command/bin/repo/update'
 require 'cocoapods/user_interface'
 require 'xcodeproj/config/other_linker_flags_parser'
 require 'xcodeproj/config'
+require 'cocoapods-imy-bin/native/resolution_report'
 
 module Xcodeproj
   class Config
@@ -56,6 +57,18 @@ module Pod
   end
   module ProjectHeaderMap
     HooksManager.register('cocoapods-imy-bin', :post_install) do |post_context|
+
+      # 输出并保存二进制切换报告
+      report = CBin.resolution_report
+      if report && report.events.any?
+        begin
+          report_path = File.join(post_context.sandbox_root.to_s, 'bin-report.json')
+          report.save(report_path)
+          report.print_summary
+        rescue => e
+          UI.warn "保存 bin-report.json 失败: #{e.message}"
+        end
+      end
 
       podfile = Pod::Config.instance.podfile
 

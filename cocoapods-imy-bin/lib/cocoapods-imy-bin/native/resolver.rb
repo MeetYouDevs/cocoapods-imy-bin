@@ -6,6 +6,7 @@ require 'cocoapods-imy-bin/native/podfile'
 require 'cocoapods-imy-bin/native/sources_manager'
 require 'cocoapods-imy-bin/native/installation_options'
 require 'cocoapods-imy-bin/gem_version'
+require 'cocoapods-imy-bin/native/resolution_report'
 require 'cocoapods-imy-bin/command/bin/archive'
 
 module Pod
@@ -100,6 +101,8 @@ module Pod
 
         missing_binary_specs = []
         missing_source_specs = Hash.new { |hash, key| hash[key] = [] }
+        report = CBin.reset_resolution_report!
+        reported_pods = {}
         specs_by_target.each do |target, rspecs|
           # use_binaries 并且 use_source_pods 不包含  本地可过滤
           use_binary_rspecs = if podfile.use_binaries? || podfile.use_binaries_selector
@@ -110,6 +113,21 @@ module Pod
                               else
                                 []
                               end
+
+          # 记录白名单/selector 过滤事件
+          if podfile.use_binaries? || podfile.use_binaries_selector
+            rspecs.each do |rspec|
+              next if use_binary_rspecs.include?(rspec)
+              rkey = "filter:#{rspec.root.name}"
+              next if reported_pods[rkey]
+              reported_pods[rkey] = true
+              if ([rspec.name, rspec.root.name] & use_source_pods).any?
+                report.record(rspec.root.name, rspec.spec.version, :whitelist_filtered)
+              elsif podfile.use_binaries_selector && !podfile.use_binaries_selector.call(rspec.spec)
+                report.record(rspec.root.name, rspec.spec.version, :selector_filtered)
+              end
+            end
+          end
 
           # Parallel.map(rspecs, in_threads: 8) do |rspec|
           specs_by_target[target] = rspecs.map do |rspec|
@@ -130,6 +148,11 @@ module Pod
 
             unless source
               missing_source_specs[use_binary ? '二进制' : '源码'] << "#{rspec.root.name} #{spec_version}"
+              rkey = "missing:#{rspec.root.name}"
+              unless reported_pods[rkey]
+                reported_pods[rkey] = true
+                report.record(rspec.root.name, spec_version, :missing_source, use_binary ? '二进制' : '源码')
+              end
               next rspec
             end
 
@@ -158,6 +181,11 @@ module Pod
                           ResolverSpecification.new(specification, used_by_only, source)
                         end
 
+                rkey = "hit:#{rspec.root.name}"
+                unless reported_pods[rkey]
+                  reported_pods[rkey] = true
+                  report.record(rspec.root.name, spec_version, :binary_hit)
+                end
               end
 
             rescue Pod::StandardError => e
@@ -165,6 +193,11 @@ module Pod
 
               # missing_binary_specs << rspec.spec if use_binary
               missing_binary_specs << rspec.spec
+              rkey = "miss_ver:#{rspec.root.name}"
+              unless reported_pods[rkey]
+                reported_pods[rkey] = true
+                report.record(rspec.root.name, spec_version, :missing_binary_version)
+              end
               rspec
             end
 

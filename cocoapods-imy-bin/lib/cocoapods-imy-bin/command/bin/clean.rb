@@ -10,6 +10,7 @@ module Pod
             清除缓存
             1、清除私有源spec仓库缓存
             2、清除二进制仓库编译产物
+            3、清除增量构建 manifest 与 resolver 报告
         DESC
 
         def self.options
@@ -17,6 +18,7 @@ module Pod
               ['--env=configuration_env', '清除哪个环境，在.cocoapods下的 bin_dev.yml的配置项，dev'],
               ['--list=[module,module,...]', '清除某个仓库下的模块 TODO'],
               ['--all', '清除所有 TODO'],
+              ['--incremental', '仅清除增量构建 manifest 和 resolver 报告'],
           ].concat(Pod::Command::Gen.options).concat(super).uniq
         end
 
@@ -25,6 +27,7 @@ module Pod
           @env =  argv.option('env') || nil
           @list = argv.flag?('list', [] )
           @all_clean = argv.flag?('all', false )
+          @incremental_clean = argv.flag?('incremental', false)
 
           @config = Pod::Config.instance
 
@@ -33,9 +36,14 @@ module Pod
 
 
         def run
+          if @incremental_clean
+            clean_incremental_data
+            return
+          end
+
           #清除所有仓库缓存
           if @all_clean
-
+            clean_incremental_data
           elsif @env  #是否存在spec仓库
             #获取对应环境地址
              CBin.config.set_configuration_env(@env)
@@ -116,6 +124,39 @@ module Pod
                 FileUtils.remove_entry(File.join(dirPath, subFile))
               end
             end
+          end
+        end
+
+        def clean_incremental_data
+          cleaned = []
+
+          # 清除增量 manifest
+          begin
+            require 'cocoapods-imy-bin/config/config_builder'
+            root_dir = CBin::Config::Builder.instance.root_dir.to_s
+            manifest_path = File.join(root_dir, '.bin-manifest.json')
+            if File.exist?(manifest_path)
+              FileUtils.rm_f(manifest_path)
+              cleaned << manifest_path
+            end
+          rescue => e
+            UI.warn "清除 manifest 失败: #{e.message}"
+          end
+
+          # 清除 resolver 报告
+          sandbox = Pod::Config.instance.sandbox_root rescue nil
+          if sandbox
+            report_path = File.join(sandbox.to_s, 'bin-report.json')
+            if File.exist?(report_path)
+              FileUtils.rm_f(report_path)
+              cleaned << report_path
+            end
+          end
+
+          if cleaned.any?
+            UI.puts "已清除: #{cleaned.join(', ')}"
+          else
+            UI.puts "无需清除，未找到 manifest 或 report 文件"
           end
         end
 

@@ -5,6 +5,7 @@ require 'cocoapods-imy-bin/helpers/framework_builder'
 require 'cocoapods-imy-bin/helpers/library_builder'
 require 'cocoapods-imy-bin/helpers/build_helper'
 require 'cocoapods-imy-bin/helpers/spec_source_creator'
+require 'cocoapods-imy-bin/helpers/increment_helper'
 require 'cocoapods-imy-bin/config/config_builder'
 require 'cocoapods-imy-bin/command/bin/lib/lint'
 require 'xcodeproj'
@@ -30,6 +31,7 @@ module Pod
               ['--sources', '私有源地址，多个用分号区分'],
               ['--framework-output', '输出framework文件'],
               ['--no-zip', '不压缩静态库 为 zip'],
+              ['--no-incremental', '禁用增量构建，强制全量重新编译'],
               ['--configuration', 'Build the specified configuration (e.g. Debug). Defaults to Release'],
               ['--env', "该组件上传的环境 %w[dev debug_iphoneos release_iphoneos]"]
           ].concat(Pod::Command::Gen.options).concat(super).uniq
@@ -50,6 +52,7 @@ module Pod
           @clean = argv.flag?('no-clean', false)
           @zip = argv.flag?('zip', true)
           @all_make = argv.flag?('all-make', false )
+          @incremental = argv.flag?('incremental', true)
           @sources = argv.option('sources') || []
           @platform = Platform.new(:ios)
 
@@ -63,9 +66,15 @@ module Pod
         end
 
         def run
-          #清除之前的缓存
           zip_dir = CBin::Config::Builder.instance.zip_dir
-          FileUtils.rm_rf(zip_dir) if File.exist?(zip_dir)
+
+          # 初始化增量构建
+          if @incremental
+            @increment = CBin::IncrementHelper.new(CBin::Config::Builder.instance.root_dir)
+          else
+            FileUtils.rm_rf(zip_dir) if File.exist?(zip_dir)
+            @increment = nil
+          end
 
           @spec = Specification.from_file(spec_file)
           generate_project
@@ -75,21 +84,50 @@ module Pod
           source_specs.concat(build_root_spec)
           source_specs.concat(build_dependencies) if @all_make
 
+          # 输出增量摘要
+          if @increment
+            entries = @increment.entries
+            cached = entries.count { |_, v| v['status'] == 'success' }
+            UI.puts "\n【增量构建摘要】 缓存命中: #{@incremental_hit || 0}, 重新构建: #{@incremental_miss || 0}, manifest: #{@increment.manifest_path}" if (@incremental_hit || 0) > 0
+          end
+
           source_specs
         end
 
         def build_root_spec
           source_specs = []
+          is_white = CBin::Config::Builder.instance.white_pod_list.include?(@spec.name)
+
+          # 增量检查
+          if @increment && !@increment.needs_build?(@spec, @env, @config)
+            UI.puts "⏭️  #{@spec.name} (#{@spec.version}) 命中增量缓存，跳过构建"
+            @incremental_hit = (@incremental_hit || 0) + 1
+            source_specs << @spec unless is_white
+            return source_specs
+          end
+          @incremental_miss = (@incremental_miss || 0) + 1
+
           builder = CBin::Build::Helper.new(@spec,
                                             @platform,
                                             @framework_output,
                                             @zip,
                                             @spec,
-                                            CBin::Config::Builder.instance.white_pod_list.include?(@spec.name),
+                                            is_white,
                                             @config)
           builder.build
           builder.clean_workspace if @clean && !@all_make
-          source_specs << @spec unless CBin::Config::Builder.instance.white_pod_list.include?(@spec.name)
+
+          # 记录构建结果
+          if @increment
+            outputs = collect_build_outputs(@spec)
+            if outputs.any?
+              @increment.record_success(@spec, @env, @config, outputs)
+            else
+              @increment.record_failure(@spec, @env, @config)
+            end
+          end
+
+          source_specs << @spec unless is_white
 
           source_specs
         end
@@ -122,6 +160,14 @@ module Pod
 
           fail_build_specs = []
           source_specs.uniq.each do |spec|
+            # 增量检查
+            if @increment && !@increment.needs_build?(spec, @env, @config)
+              UI.puts "⏭️  #{spec.name} (#{spec.version}) 命中增量缓存，跳过构建"
+              @incremental_hit = (@incremental_hit || 0) + 1
+              next
+            end
+            @incremental_miss = (@incremental_miss || 0) + 1
+
             begin
               builder = CBin::Build::Helper.new(spec,
                                                 @platform,
@@ -131,9 +177,20 @@ module Pod
                                                 false ,
                                                 @config)
               builder.build
+
+              # 记录构建成功
+              if @increment
+                outputs = collect_build_outputs(spec)
+                if outputs.any?
+                  @increment.record_success(spec, @env, @config, outputs)
+                else
+                  @increment.record_failure(spec, @env, @config)
+                end
+              end
             rescue Object => exception
               UI.puts exception
               fail_build_specs << spec
+              @increment.record_failure(spec, @env, @config) if @increment
             end
           end
 
@@ -151,6 +208,16 @@ module Pod
         end
 
         private
+
+        def collect_build_outputs(spec)
+          outputs = []
+          zip_dir = CBin::Config::Builder.instance.zip_dir.to_s
+          fw_zip = File.join(zip_dir, CBin::Config::Builder.instance.framework_name_version(spec) + '.zip')
+          outputs << fw_zip if File.exist?(fw_zip)
+          lib_zip = File.join(zip_dir, CBin::Config::Builder.instance.library_name(spec) + '.zip')
+          outputs << lib_zip if File.exist?(lib_zip)
+          outputs
+        end
 
         def generate_project
           Podfile.execute_with_bin_plugin do

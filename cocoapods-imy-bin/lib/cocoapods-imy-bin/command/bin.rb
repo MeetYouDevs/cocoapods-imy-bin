@@ -2,6 +2,7 @@
 require 'cocoapods-imy-bin/command/bin/initHotKey'
 require 'cocoapods-imy-bin/command/bin/init'
 require 'cocoapods-imy-bin/command/bin/archive'
+require 'cocoapods-imy-bin/command/bin/doctor'
 require 'cocoapods-imy-bin/command/bin/auto'
 require 'cocoapods-imy-bin/command/bin/code'
 require 'cocoapods-imy-bin/command/bin/local'
