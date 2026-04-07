@@ -26,7 +26,7 @@ module CBin
         sources << binary_source
         sources.reverse!
       end
-      sources
+      sources.compact
     end
 
     def sources_option(code_dependencies, additional_sources)
