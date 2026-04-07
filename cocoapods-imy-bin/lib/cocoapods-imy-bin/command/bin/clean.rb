@@ -57,9 +57,7 @@ module Pod
             # #2、更新本地仓库源
             update_cocoapods_repo
             #3、删除二进制私有源存储二进制文件
-            update_cocoapods_repo
-
-             delete_build_binary
+            delete_build_binary
             #4、清除cocoapods pods cache
             update_cocopods_pods_cache
 

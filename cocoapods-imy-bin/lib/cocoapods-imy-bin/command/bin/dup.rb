@@ -66,8 +66,7 @@ module Pod
           if status.to_i != 0
             raise "由于权限不足，请手动创建 后重试"
           else #重复资源，警告
-            raise "由于权限不足，请手动创建 后重试"
-
+            UI.warn stdout unless stdout.to_s.empty?
           end
         end
 

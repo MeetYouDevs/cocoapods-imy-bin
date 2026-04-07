@@ -73,7 +73,7 @@ module Pod
     end
 
     def configuration_env
-      get_internal_hash_value(CONFIGURATION_ENV, "dev") ||  ENV[CONFIGURATION_ENV] == "dev"
+      get_internal_hash_value(CONFIGURATION_ENV, nil) || ENV[CONFIGURATION_ENV] || "dev"
     end
 
     private

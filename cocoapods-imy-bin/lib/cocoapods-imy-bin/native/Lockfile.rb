@@ -17,8 +17,8 @@ module Pod
           spec_path = File.join(Pod::Config.instance.sandbox_root,name)
 
           if File.directory?(spec_path)
-            #.头文件小于1个，认定是空的，需要重新下载podspec
-            file_count = Dir.glob(File.join(spec_path, '**', '*.h')).select { |file| File.file?(file) }.count
+            # 文件小于1个，认定是空的，需要重新下载podspec
+            file_count = Dir.glob(File.join(spec_path, '**', '*')).select { |file| File.file?(file) }.count
             #用于判断是否文件，太少就认定是失败了
             if file_count < 1
               FileUtils.rm_rf(spec_path)

@@ -203,10 +203,6 @@ module CBin
       end
 
       def binary_source_files
-        { http: format(CBin.config.binary_download_url, code_spec.root.name, code_spec.version), type: CBin.config.download_file_type }
-      end
-
-      def binary_source_files
         "bin_#{code_spec.name}_#{code_spec.version}/Headers/*"
       end
 

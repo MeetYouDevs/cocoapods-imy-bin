@@ -52,9 +52,6 @@ module Pod
           # 同步 Podfile_local 文件
           project_root = Pod::Config.instance.project_root
           path = File.join(project_root.to_s, 'Podfile_local')
-          unless File.exist?(path)
-            path = File.join(project_root.to_s, 'Podfile_local')
-          end
 
           if File.exist?(path)
             contents = File.open(path, 'r:utf-8', &:read)

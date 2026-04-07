@@ -32,7 +32,7 @@ module Pod
         ENV[key] = value_returner.call
 
         yield if block_given?
-
+      ensure
         ENV[key] = origin_value
       end
     end

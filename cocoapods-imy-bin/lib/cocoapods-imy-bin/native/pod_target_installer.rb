@@ -59,7 +59,6 @@ module Pod
               ditto "${COMPATIBILITY_HEADER_PATH}" "${COPY_PATH}"
               ditto "${UMBRELLA_PATH}" "${COPY_PATH}"
               ditto "${SWIFTMODULE_PATH}" "${COPY_PATH}/${PRODUCT_MODULE_NAME}.swiftmodule"
-              ditto "${SWIFTMODULE_PATH}" "${COPY_PATH}/${PRODUCT_MODULE_NAME}.swiftmodule"
               
                 if [ "${PRODUCT_MODULE_NAME}" != "${PRODUCT_NAME}" ] ; then
                    ditto "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}-umbrella.h" "${COPY_PATH}"
