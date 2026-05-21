@@ -23,3 +23,5 @@ if Pod.match_version?('~> 1.4')
   require 'cocoapods-imy-bin/native/Downloader'
 
 end
+
+require 'cocoapods-imy-bin/native/target_inspector'

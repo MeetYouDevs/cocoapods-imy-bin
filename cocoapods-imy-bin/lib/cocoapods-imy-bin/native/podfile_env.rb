@@ -9,6 +9,7 @@ module Pod
     ALLOW_PRERELEASE = 'allow_prerelease'
     USE_PLUGINS = 'use_plugins'
     CONFIGURATION_ENV = 'configuration_env'
+    IGNORE_MISSING_TARGETS = 'ignore_missing_targets'
 
     module ENVExecutor
       def execute_with_bin_plugin(&block)
@@ -25,6 +26,10 @@ module Pod
 
       def execute_with_use_hmap(use_hmap, &block)
         execute_with_key(USE_HMAP, -> { use_hmap ? 'true' : 'false' }, &block)
+      end
+
+      def execute_with_ignore_missing_targets(ignore_missing_targets, &block)
+        execute_with_key(IGNORE_MISSING_TARGETS, -> { ignore_missing_targets ? 'true' : 'false' }, &block)
       end
 
       def execute_with_key(key, value_returner)

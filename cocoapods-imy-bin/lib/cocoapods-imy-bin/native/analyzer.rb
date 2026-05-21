@@ -49,6 +49,52 @@ module Pod
         end
       end
 
+      def inspect_targets_to_integrate
+        @ignored_missing_target_definitions = []
+        inspection_result = {}
+        UI.section 'Inspecting targets to integrate' do
+          inspectors = @podfile_dependency_cache.target_definition_list.map do |target_definition|
+            next if target_definition.abstract?
+            TargetInspector.new(target_definition, config.installation_root)
+          end.compact
+          inspectors.group_by(&:compute_project_path).each do |project_path, target_inspectors|
+            project = Xcodeproj::Project.open(project_path)
+            target_inspectors.each do |inspector|
+              target_definition = inspector.target_definition
+              begin
+                results = inspector.compute_results(project)
+              rescue IgnoreMissingTargetDefinition => e
+                @ignored_missing_target_definitions << e.target_definition
+                UI.warn "#{e.message} Skipping target `#{target_definition.name}` because `--imt` is enabled."
+                next
+              end
+
+              inspection_result[target_definition] = results
+              UI.message('Using `ARCHS` setting to build architectures of ' \
+                "target `#{target_definition.label}`: (`#{results.archs.join('`, `')}`)")
+            end
+          end
+        end
+        inspection_result
+      end
+
+      alias old_resolve_dependencies resolve_dependencies
+      def resolve_dependencies(locked_dependencies)
+        resolver_specs_by_target = old_resolve_dependencies(locked_dependencies)
+        reject_ignored_missing_target_definitions(resolver_specs_by_target)
+      end
+
+      private
+
+      def reject_ignored_missing_target_definitions(resolver_specs_by_target)
+        ignored_target_definitions = Array(@ignored_missing_target_definitions)
+        return resolver_specs_by_target if ignored_target_definitions.empty?
+
+        resolver_specs_by_target.reject do |target_definition, _|
+          ignored_target_definitions.include?(target_definition)
+        end
+      end
+
 
     end
   end

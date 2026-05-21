@@ -22,6 +22,7 @@ module CBin
           'code_repo_url' => { description: '源码私有源 Git 地址', default: 'git@github.com:su350380433/example_spec_source.git' },
           'binary_repo_url' => { description: '二进制私有源 Git 地址', default: 'git@github.com:su350380433/example_spec_bin_dev.git' },
           'binary_download_url' => { description: '二进制下载地址，内部会依次传入组件名称与版本，替换字符串中的 %s ', default: 'http://localhost:8080/frameworks/%s/%s/zip' },
+          'update_local' => { description: 'pod bin update 前是否先 git pull Podfile_local 所在仓库', default: 'false', selection: %w[true false] },
           # 'binary_type' => { description: '二进制打包类型', default: 'framework', selection: %w[framework library] },
           'download_file_type' => { description: '下载二进制文件类型', default: 'zip', selection: %w[zip tgz tar tbz txz dmg] }
       }
@@ -94,6 +95,10 @@ module CBin
       @default_config ||= Hash[template_hash.map { |k, v| [k, v[:default]] }]
     end
 
+    def update_local?
+      normalize_boolean(fetch_config_value('update_local', template_hash['update_local'][:default]))
+    end
+
     private
 
     def load_config
@@ -124,6 +129,19 @@ module CBin
           raise Pod::Informative, "#{k} 字段的值必须限定在可选值 [ #{selection.join(' / ')} ] 内".red
         end
       end
+    end
+
+    def fetch_config_value(key, default = nil)
+      return default unless config.respond_to?(key)
+
+      value = config.send(key)
+      value.nil? ? default : value
+    end
+
+    def normalize_boolean(value)
+      return value if value == true || value == false
+
+      value.to_s.strip.downcase == 'true'
     end
 
     def respond_to_missing?(method, include_private = false)

@@ -1,10 +1,12 @@
 
 require 'cocoapods-imy-bin/command/bin/update'
+require 'cocoapods-imy-bin/native/podfile_env'
 module Pod
   class Command
     class Bin < Command
       class Install < Bin
         include Pod
+        include Pod::Podfile::ENVExecutor
 
         self.summary = 'pod install 拦截器，会加载本地Podfile_local文件，DSL加载到原始Podfile文件中。'
 
@@ -18,6 +20,7 @@ module Pod
           [
             ['--repo-update', 'Force running `pod repo update` before install'],
             ['--deployment', 'Disallow any changes to the Podfile or the Podfile.lock during installation'],
+            ['--imt', 'Ignore missing user target name mismatches and fall back to the first native target in the Xcode project'],
             ['--clean-install', 'Ignore the contents of the project cache and force a full pod installation. This only ' \
           'applies to projects that have enabled incremental installation']
           ].concat(super).reject { |(name, _)| name == '--no-repo-update' }
@@ -25,6 +28,7 @@ module Pod
 
         def initialize(argv)
           @update = argv.flag?('update')
+          @imt = argv.flag?('imt')
           super
           @additional_args = argv.remainder!
         end
@@ -35,8 +39,10 @@ module Pod
             *@additional_args
           ]
           gen = Pod::Command::Install.new(CLAide::ARGV.new(argvs))
-          gen.validate!
-          gen.run
+          execute_with_ignore_missing_targets(@imt) do
+            gen.validate!
+            gen.run
+          end
         end
       end
     end
