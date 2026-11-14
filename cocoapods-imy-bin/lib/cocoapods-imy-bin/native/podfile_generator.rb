@@ -3,6 +3,7 @@
 require 'parallel'
 require 'cocoapods'
 require 'cocoapods-imy-bin/native/pod_source_installer'
+require 'cocoapods-imy-bin/helpers/xcframework_build_context'
 
 module Pod
   module Generate
@@ -26,6 +27,7 @@ module Pod
                                else
                                  generator.configuration.use_frameworks?
                                end
+        use_frameworks_value = { linkage: :static } if CBin::XCFrameworkBuildContext.current
 
         Pod::Podfile.new do
           project "#{project_name}.xcodeproj"

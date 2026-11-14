@@ -4,6 +4,8 @@ require 'cocoapods/user_interface'
 require 'xcodeproj/config/other_linker_flags_parser'
 require 'xcodeproj/config'
 require 'cocoapods-imy-bin/native/resolution_report'
+require 'cocoapods-imy-bin/helpers/xcframework_build_context'
+require 'cocoapods-imy-bin/helpers/xcframework_consumer'
 
 module Xcodeproj
   class Config
@@ -57,6 +59,11 @@ module Pod
   end
   module ProjectHeaderMap
     HooksManager.register('cocoapods-imy-bin', :post_install) do |post_context|
+      if (build_context = CBin::XCFrameworkBuildContext.current)
+        build_context.targets = post_context.aggregate_targets.flat_map(&:pod_targets).uniq
+      end
+
+      CBin::XCFrameworkConsumer.configure(post_context)
 
       # 输出并保存二进制切换报告
       report = CBin.resolution_report

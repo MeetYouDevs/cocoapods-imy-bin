@@ -13,6 +13,7 @@ module Pod
         ]
         def self.options
           [
+              ['--xcframework', 'Package Swift/Objective-C static frameworks for device and simulator'],
               ['--code-dependencies', '使用源码依赖'],
               ['--allow-prerelease', '允许使用 prerelease 的版本'],
               ['--no-clean', '保留构建中间产物'],
@@ -38,6 +39,7 @@ module Pod
           @clean = argv.flag?('clean', true)
           @zip = argv.flag?('zip', true)
           @all_make = argv.flag?('all-make', false )
+          @xcframework = argv.flag?('xcframework', false)
           @verbose = argv.flag?('verbose',true)
 
           @config = argv.option('configuration', 'Debug')
@@ -48,6 +50,9 @@ module Pod
 
         def validate!
           help! "未找到 podspec文件" unless @podspec
+          if @xcframework && (@framework_output || !@zip)
+            raise Informative, '--xcframework cannot be combined with --framework-output or --no-zip.'
+          end
           super
         end
 
@@ -61,7 +66,7 @@ module Pod
           fail_push_specs = []
           source_specs.uniq.each do |spec|
             begin
-              fail_push_specs << spec unless CBin::Upload::Helper.new(spec,@code_dependencies,@sources).upload
+              fail_push_specs << spec unless CBin::Upload::Helper.new(spec,@code_dependencies,@sources, xcframework: @xcframework).upload
             rescue  Object => exception
               UI.puts exception
               fail_push_specs << spec
@@ -72,6 +77,7 @@ module Pod
             fail_push_specs.uniq.each do |spec|
               UI.warn "【#{spec.name} | #{spec.version}】组件spec push失败 ."
             end
+            raise Informative, 'Binary upload or spec publication failed.'
           end
 
           success_specs = source_specs - fail_push_specs
@@ -119,6 +125,8 @@ module Pod
           if @all_make
             argvs += ['--all-make']
           end
+          argvs << '--xcframework' if @xcframework
+          argvs << '--no-zip' unless @zip
           if @env
             argvs += ["--env=#{@env}"]
           end

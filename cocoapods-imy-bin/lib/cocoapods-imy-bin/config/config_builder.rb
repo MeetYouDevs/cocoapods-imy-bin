@@ -62,6 +62,10 @@ module CBin
         "#{spec.name}.framework"
       end
 
+      def xcframework_zip_file(spec)
+        File.join(zip_dir, "#{spec.name}.xcframework_#{spec.version}.zip")
+      end
+
       def framework_name_version(spec)
         "#{spec.name}.framework_#{spec.version}"
       end

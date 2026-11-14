@@ -2,6 +2,8 @@
 
 require 'cocoapods'
 require 'cocoapods-imy-bin/config/config'
+require 'cocoapods-imy-bin/helpers/xcframework_builder'
+require 'cocoapods-imy-bin/helpers/xcframework_consumer'
 
 module CBin
   class SpecificationSource
@@ -9,9 +11,10 @@ module CBin
       attr_reader :code_spec
       attr_reader :spec
 
-      def initialize(code_spec, platforms = 'ios')
+      def initialize(code_spec, platforms = 'ios', xcframework: false)
         @code_spec = code_spec
         @platforms = Array(platforms)
+        @xcframework = xcframework
         validate!
       end
 
@@ -20,6 +23,7 @@ module CBin
       end
 
       def create
+        return create_xcframework_spec if @xcframework
         # spec = nil
         if CBin::Build::Utils.is_framework(@code_spec)
           spec = create_framework_from_code_spec
@@ -53,6 +57,32 @@ module CBin
       end
 
       private
+
+      def create_xcframework_spec
+        hash = JSON.parse(code_spec.to_json)
+        source_keys = %w[source_files public_header_files private_header_files project_header_files
+                         header_mappings_dir header_dir module_map exclude_files preserve_paths
+                         prepare_command script_phases resource_bundles resources vendored_libraries vendored_frameworks]
+        [hash, hash['ios']].compact.each do |attributes|
+          source_keys.each { |key| attributes.delete(key) }
+        end
+        hash['platforms'] = hash.fetch('platforms', {}).select { |name, _| name == 'ios' }
+        @spec = Pod::Specification.from_hash(hash)
+        @spec.source = binary_source
+        @spec.vendored_frameworks = "#{code_spec.module_name}.xcframework"
+        @spec.static_framework = true
+        @spec.pod_target_xcconfig = @spec.consumer(:ios).pod_target_xcconfig.merge(CBin::XCFrameworkConsumer::EVOLUTION_SETTING => 'YES')
+        consumer = code_spec.consumer(:ios)
+        if consumer.resources.any?
+          @spec.resources = consumer.resources.map { |path| CBin::XCFrameworkBuilder.resource_path(path) }
+        end
+        if consumer.resource_bundles.any?
+          @spec.resource_bundles = consumer.resource_bundles.transform_values do |paths|
+            paths.map { |path| CBin::XCFrameworkBuilder.resource_path(path) }
+          end
+        end
+        @spec
+      end
 
       def create_from_code_spec
         @spec = code_spec.dup
