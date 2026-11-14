@@ -10,9 +10,12 @@ require 'pretty_bacon'
 require 'pathname'
 require 'cocoapods'
 
-Mocha::Configuration.prevent(:stubbing_non_existent_method)
+Mocha.configure do |configuration|
+  configuration.stubbing_non_existent_method = :prevent
+end
 
 require 'cocoapods_plugin'
+require 'cocoapods-imy-bin/native'
 
 #-----------------------------------------------------------------------------#
 

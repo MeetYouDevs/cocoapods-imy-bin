@@ -21,10 +21,11 @@ group :development do
 
   cp_gem 'cocoapods',                'cocoapods',path: 'CocoaPods'
   cp_gem 'xcodeproj',                'xcodeproj',path: 'Xcodeproj'
-  cp_gem 'cocoapods-imy-bin',                'cocoapods-imy-bin',path: 'cocoapods-imy-bin'
+  gemspec
 
   gem 'cocoapods-generate', '2.2.5'
-  gem 'mocha'
+  # mocha-on-bacon passes the assertion counter to mocha_verify (removed in Mocha 3).
+  gem 'mocha', '~> 2.0'
   gem 'bacon'
   gem 'mocha-on-bacon'
   gem 'prettybacon'
