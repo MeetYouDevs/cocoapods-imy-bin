@@ -9,6 +9,8 @@ require 'cocoapods-imy-bin/helpers/increment_helper'
 require 'cocoapods-imy-bin/config/config_builder'
 require 'cocoapods-imy-bin/command/bin/lib/lint'
 require 'xcodeproj'
+require 'cocoapods-imy-bin/helpers/xcframework_builder'
+require 'cocoapods-imy-bin/helpers/xcframework_build_context'
 
 module Pod
   class Command
@@ -25,6 +27,7 @@ module Pod
 
         def self.options
           [
+              ['--xcframework', 'Package Swift/Objective-C static frameworks for device and simulator'],
               ['--all-make', '对该组件的依赖库，全部制作为二进制组件'],
               ['--code-dependencies', '使用源码依赖'],
               ['--no-clean', '保留构建中间产物'],
@@ -53,6 +56,9 @@ module Pod
           @zip = argv.flag?('zip', true)
           @all_make = argv.flag?('all-make', false )
           @incremental = argv.flag?('incremental', true)
+          @xcframework = argv.flag?('xcframework', false)
+          # The legacy manifest does not include artifact format or SDK identity.
+          @incremental = false if @xcframework
           @sources = argv.option('sources') || []
           @platform = Platform.new(:ios)
 
@@ -66,18 +72,37 @@ module Pod
         end
 
         def run
+          if @xcframework && (@framework_output || !@zip)
+            raise Informative, '--xcframework cannot be combined with --framework-output or --no-zip.'
+          end
           zip_dir = CBin::Config::Builder.instance.zip_dir
 
           # 初始化增量构建
           if @incremental
             @increment = CBin::IncrementHelper.new(CBin::Config::Builder.instance.root_dir)
           else
-            FileUtils.rm_rf(zip_dir) if File.exist?(zip_dir)
+            FileUtils.rm_rf(zip_dir) if File.exist?(zip_dir) && !@xcframework
             @increment = nil
           end
 
           @spec = Specification.from_file(spec_file)
-          generate_project
+          if @xcframework
+            @xcframework_context = CBin::XCFrameworkBuildContext.capture { generate_project }
+          else
+            generate_project
+          end
+
+          if @xcframework
+            workspace = File.join(CBin::Config::Builder.instance.gen_dir, @spec.name)
+            targets = @xcframework_context.ordered_targets(@spec.name, @all_make)
+            # Validate the complete selected graph before producing any archives.
+            builders = targets.map do |target|
+              CBin::XCFrameworkBuilder.new(target.root_spec, workspace, zip_dir, @config, pod_target: target)
+            end
+            builders.each(&:validate!)
+            builders.each(&:build)
+            return targets.map { |target| CBin::XCFrameworkBuildContext.spec_with_resolved_dependencies(target) }
+          end
 
           swift_pods_buildsetting
           source_specs = Array.new
@@ -221,13 +246,14 @@ module Pod
 
         def generate_project
           Podfile.execute_with_bin_plugin do
-            Podfile.execute_with_use_binaries(!@code_dependencies) do
+            Podfile.execute_with_use_binaries(!@code_dependencies && !@xcframework) do
                 argvs = [
-                  "--sources=#{sources_option(@code_dependencies, @sources)}",
+                  "--sources=#{sources_option(@code_dependencies || @xcframework, @sources)}",
                   "--gen-directory=#{CBin::Config::Builder.instance.gen_dir}",
                   '--clean',
                   *@additional_args
                 ]
+                argvs << '--no-use-libraries' if @xcframework
 
                 podfile= File.join(Pathname.pwd, "Podfile")
                 if File.exist?(podfile)

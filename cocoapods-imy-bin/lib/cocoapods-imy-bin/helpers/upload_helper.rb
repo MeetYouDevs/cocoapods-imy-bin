@@ -9,16 +9,18 @@ require 'cocoapods-imy-bin/helpers/framework_builder'
 require 'cocoapods-imy-bin/helpers/library_builder'
 require 'cocoapods-imy-bin/helpers/sources_helper'
 require 'cocoapods-imy-bin/command/bin/spec/push'
+require 'open3'
 
 module CBin
   class Upload
     class Helper
       include CBin::SourcesHelper
 
-      def initialize(spec,code_dependencies,sources)
+      def initialize(spec,code_dependencies,sources, xcframework: false)
         @spec = spec
         @code_dependencies = code_dependencies
         @sources = sources
+        @xcframework = xcframework
       end
 
       def upload
@@ -36,7 +38,7 @@ module CBin
       end
 
       def spec_creator
-        spec_creator = CBin::SpecificationSource::Creator.new(@spec)
+        spec_creator = CBin::SpecificationSource::Creator.new(@spec, 'ios', xcframework: @xcframework)
         spec_creator.create
         spec_creator.write_spec_file
         spec_creator.filename
@@ -45,6 +47,10 @@ module CBin
       #推送二进制
       # curl http://ci.xxx:9192/frameworks -F "name=IMYFoundation" -F "version=7.7.4.2" -F "annotate=IMYFoundation_7.7.4.2_log" -F "file=@bin-zip/bin_IMYFoundation_7.7.4.2.zip"
       def curl_zip
+        if @xcframework
+          zip_file = CBin::Config::Builder.instance.xcframework_zip_file(@spec)
+          return upload_zip(zip_file)
+        end
         zip_file = "#{CBin::Config::Builder.instance.library_file(@spec)}.zip"
         res = File.exist?(zip_file)
         unless res
@@ -52,16 +58,24 @@ module CBin
           res = File.exist?(zip_file)
         end
         if res
-          command = "curl #{CBin.config.binary_upload_url} -F \"name=#{@spec.name}\" -F \"version=#{@spec.version}\" -F \"annotate=#{@spec.name}_#{@spec.version}_log\" -F \"file=@#{zip_file}\""
-          print <<EOF
-          上传二进制文件
-          #{command}
-EOF
-          upload_result = `#{command}`
-          puts "#{upload_result}"
+          upload_zip(zip_file)
         end
 
         res
+      end
+
+      def upload_zip(zip_file)
+        raise Pod::Informative, "Missing binary archive: #{zip_file}" unless File.file?(zip_file)
+        output, status = Open3.capture2e('curl', '--fail', '--silent', '--show-error',
+                                       '--connect-timeout', '10', '--max-time', '300',
+                                       CBin.config.binary_upload_url,
+                                       '--form-string', "name=#{@spec.name}",
+                                       '--form-string', "version=#{@spec.version}",
+                                       '--form-string', "annotate=#{@spec.name}_#{@spec.version}_log",
+                                       '-F', "file=@#{zip_file}")
+        raise Pod::Informative, "Binary upload failed: #{output}" unless status.success?
+        Pod::UI.puts(output)
+        true
       end
 
 
